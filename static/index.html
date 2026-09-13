@@ -21,9 +21,13 @@
                 <div class="trainer-card-info">
                     <div class="trainer-card-row-top">
                         <span class="trainer-id-tag">TRAINER ID: #2026-SOC</span>
-                        <span class="trainer-rank-pill">CYBER ELITE FOUR</span>
+                        <span class="trainer-dept-pill" id="menu-trainer-dept">SOC INCIDENT RESPONSE</span>
+                        <span class="trainer-rank-pill" id="menu-trainer-title">ZERO-DAY HUNTER</span>
                     </div>
-                    <div class="trainer-name-display" id="menu-trainer-name">CHAMPION RED</div>
+                    <div class="trainer-name-row">
+                        <div class="trainer-name-display" id="menu-trainer-name">CHAMPION RED</div>
+                        <button id="btn-edit-profile" class="trainer-edit-btn" title="Customize Employee Call-Sign, Department & Title">✏️ EDIT PROFILE</button>
+                    </div>
                 </div>
                 <div class="trainer-badges-tray" title="Cybersecurity Championship Badges (8/8)">
                     <span class="badge-item active" title="Firewall Badge - Defended Perimeter"><span class="badge-emoji">🛡️</span><span class="badge-tooltip">Firewall</span></span>
@@ -76,6 +80,13 @@
                     <div class="btn-left-content">
                         <span style="font-size: 14px;">⚙</span>
                         <span>SIMPLIFIED CONTROLS &amp; MOVES</span>
+                    </div>
+                    <span class="btn-arrow">▶</span>
+                </button>
+                <button id="btn-spectator-toggle" class="cyber-btn small poke-capsule-btn" title="Toggle Big Screen Spectator / Streamer Mode (Hotkey: F2)">
+                    <div class="btn-left-content">
+                        <span style="font-size: 14px;">📺</span>
+                        <span id="spectator-btn-label">SPECTATOR / BROADCAST MODE: OFF</span>
                     </div>
                     <span class="btn-arrow">▶</span>
                 </button>
@@ -198,6 +209,10 @@
                         <div class="vs-trainer-info">
                             <div class="vs-player-tag">PLAYER 1</div>
                             <div id="vs-p1-trainer-name" class="vs-trainer-name">CHAMPION RED</div>
+                            <div class="vs-trainer-meta">
+                                <span id="vs-p1-dept" class="vs-meta-pill vs-dept-pill">SOC INCIDENT RESPONSE</span>
+                                <span id="vs-p1-title" class="vs-meta-pill vs-title-pill">ZERO-DAY HUNTER</span>
+                            </div>
                         </div>
                     </div>
                     <div class="vs-pokemon-display">
@@ -223,6 +238,10 @@
                         <div class="vs-trainer-info text-right">
                             <div class="vs-player-tag" id="vs-p2-role-tag">CYBER BOT</div>
                             <div id="vs-p2-trainer-name" class="vs-trainer-name">CYNTHIA</div>
+                            <div class="vs-trainer-meta right-align">
+                                <span id="vs-p2-dept" class="vs-meta-pill vs-dept-pill">RED TEAM PENTEST</span>
+                                <span id="vs-p2-title" class="vs-meta-pill vs-title-pill">BUFFER OVERFLOW SPECIALIST</span>
+                            </div>
                         </div>
                         <img id="vs-p2-trainer-img" class="vs-trainer-img" src="/static/assets/sprites/trainers/cynthia.png" alt="Trainer">
                     </div>
@@ -237,8 +256,33 @@
 
         <!-- 4. BATTLE CANVAS SCREEN -->
         <div id="screen-battle" class="game-screen hidden" style="padding: 0; background: #000;">
+            <!-- Live Broadcast Bug (Spectator Mode) -->
+            <div id="spectator-watermark" class="spectator-watermark hidden">
+                <span class="live-rec-dot">●</span> <span>LIVE BROADCAST // CYBER BATTLE CHAMPIONSHIP 2026</span>
+            </div>
+
+            <!-- Tekken Slow-Mo Final Hit Replay Overlay -->
+            <div id="replay-overlay" class="replay-overlay hidden">
+                <div class="replay-letterbox-top"></div>
+                <div class="replay-badge-card">
+                    <span class="replay-rec-dot">●</span> ⏪ SLOW-MO FINISH REPLAY (0.25x)
+                    <div class="replay-skip-hint">[SPACE] / [ENTER] TO SKIP</div>
+                </div>
+                <div class="replay-letterbox-bottom"></div>
+            </div>
+
             <canvas id="game-canvas" width="1000" height="600"></canvas>
+
+            <!-- Real-Time Combat Feed Ticker -->
+            <div id="combat-ticker-container" class="combat-ticker-container">
+                <div class="ticker-label">⚡ COMBAT FEED</div>
+                <div class="ticker-content" id="combat-ticker-text">MATCH INITIALIZED // PROTOCOL: TEKKEN COMBAT // MONITORING ATTACK STRINGS</div>
+            </div>
+
             <div class="battle-hud-actions">
+                <button id="btn-battle-spectator" class="cyber-btn small" style="background: rgba(13, 27, 42, 0.9);">
+                    <span>📺 SPECTATOR VIEW</span>
+                </button>
                 <button id="btn-trigger-trivia" class="cyber-btn small" style="background: rgba(13, 27, 42, 0.9);">
                     <span>🛡️ SOC INCIDENT HACK</span>
                 </button>
@@ -334,6 +378,45 @@
                         </tr>
                     </tbody>
                 </table>
+            </div>
+        </div>
+
+        <!-- 6. TRAINER PROFILE CUSTOMIZER MODAL -->
+        <div id="profile-modal" class="modal-overlay hidden">
+            <div class="modal-box profile-modal-box">
+                <div class="modal-title">
+                    <span>⚡ EMPLOYEE TRAINER PROFILE SETUP</span>
+                    <button class="modal-close" id="btn-close-profile">&times;</button>
+                </div>
+                <div class="profile-form">
+                    <div class="profile-preview-card">
+                        <img id="profile-preview-avatar" src="/static/assets/sprites/trainers/red.png" alt="Avatar" class="profile-preview-avatar">
+                        <div>
+                            <div id="profile-preview-handle" style="font-family: 'Orbitron', monospace; font-weight: bold; font-size: 16px; color: #fff;">CHAMPION RED</div>
+                            <div style="font-size: 11px; color: var(--neon-blue);" id="profile-preview-dept">SOC INCIDENT RESPONSE</div>
+                            <div style="font-size: 11px; color: var(--neon-yellow);" id="profile-preview-title">ZERO-DAY HUNTER</div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="input-trainer-handle">EMPLOYEE CALL-SIGN / ALIAS:</label>
+                        <input type="text" id="input-trainer-handle" maxlength="18" placeholder="e.g. Alice / Red Sentinel" class="cyber-input">
+                    </div>
+                    <div class="form-group">
+                        <label for="select-trainer-dept">CYBERSECURITY DEPARTMENT / TEAM:</label>
+                        <select id="select-trainer-dept" class="cyber-select"></select>
+                    </div>
+                    <div class="form-group">
+                        <label for="select-trainer-title">SPECIALTY CYBERSECURITY TITLE:</label>
+                        <select id="select-trainer-title" class="cyber-select"></select>
+                    </div>
+                    <button id="btn-save-profile" class="cyber-btn poke-capsule-btn" style="margin-top: 15px; width: 100%;">
+                        <div class="btn-left-content">
+                            <img src="/static/assets/sprites/items/poke-ball.png" class="btn-ball-img" alt="Save">
+                            <span>SAVE TRAINER PROFILE</span>
+                        </div>
+                        <span class="btn-arrow">✔</span>
+                    </button>
+                </div>
             </div>
         </div>
 

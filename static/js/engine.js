@@ -97,6 +97,10 @@ class Fighter {
         this.opponent = null;
     }
 
+    get isDead() {
+        return this.hp <= 0 || this.state === "dead";
+    }
+
     canAct() {
         return (
             this.state === "idle" ||
@@ -775,7 +779,7 @@ class GameEngine {
     }
 
     handlePlayerInput(code, isDown) {
-        if (!this.p1) return;
+        if (!this.p1 || this.matchOver || this.isReplaying) return;
 
         // Player 1 Controls: WASD for movement, U/I/J/K for Tekken 1,2,3,4 attacks
         // Or alternative F/G/H/V
@@ -873,6 +877,11 @@ class GameEngine {
         this.p1Wins = 0;
         this.p2Wins = 0;
         this.matchOver = false;
+        this.isReplaying = false;
+        this.frameHistory = [];
+        this.replayBuffer = [];
+        const replayOverlay = document.getElementById("replay-overlay");
+        if (replayOverlay) replayOverlay.classList.add("hidden");
         this.startRound();
 
         if (!this.running) {
@@ -887,6 +896,10 @@ class GameEngine {
     }
 
     startRound() {
+        this.isReplaying = false;
+        const replayOverlay = document.getElementById("replay-overlay");
+        if (replayOverlay) replayOverlay.classList.add("hidden");
+
         this.p1.hp = this.p1.maxHp;
         this.p1.firewall = this.p1.maxFirewall;
         this.p1.x = 300;
@@ -924,6 +937,10 @@ class GameEngine {
 
     handleKO(winner, loser) {
         if (this.matchOver) return;
+        if (this.roundTimer) {
+            clearInterval(this.roundTimer);
+            this.roundTimer = null;
+        }
         this.triggerCameraShake(18, 25);
         this.triggerSuperFreeze(75);
 
@@ -933,12 +950,16 @@ class GameEngine {
         const isMatchDecider = (this.p1Wins >= 2 || this.p2Wins >= 2);
 
         if (window.soundEngine) {
-            window.soundEngine.stopLowHpAlarm();
-            window.soundEngine.setClimaxMode(false);
-            if (loser) window.soundEngine.playCry(loser.charData.id, 0.9);
-            window.soundEngine.playFaint();
-            window.soundEngine.playCrowdRoar();
-            window.soundEngine.announce("K.O.!");
+            try {
+                window.soundEngine.stopLowHpAlarm();
+                window.soundEngine.setClimaxMode(false);
+                if (loser) window.soundEngine.playCry(loser.charData.id, 0.9);
+                window.soundEngine.playFaint();
+                window.soundEngine.playCrowdRoar();
+                window.soundEngine.announce("K.O.!");
+            } catch (e) {
+                console.error("Audio error in handleKO:", e);
+            }
         }
         this.showBanner("K.O.!", "#ee1515", 120);
         this.logCombatEvent("KO", `K.O.! ${winner.charData.name.toUpperCase()} delivered the finishing blow!`);
@@ -950,10 +971,26 @@ class GameEngine {
                 this.showBanner(`${victor.charData.name.toUpperCase()} WINS!`, "#00e676", 200);
                 this.logCombatEvent("VICTORY", `🏆 MATCH CONCLUDED // ${victor.charData.name.toUpperCase()} WINS CYBER CHAMPIONSHIP!`);
                 if (window.soundEngine) {
-                    window.soundEngine.playVictory();
-                    window.soundEngine.announce(`${victor.charData.name} wins!`);
+                    try {
+                        if (typeof window.soundEngine.playVictory === "function") {
+                            window.soundEngine.playVictory();
+                        } else if (typeof window.soundEngine.playVictoryFanfare === "function") {
+                            window.soundEngine.playVictoryFanfare();
+                        }
+                        if (typeof window.soundEngine.announce === "function") {
+                            window.soundEngine.announce(`${victor.charData.name} wins!`);
+                        }
+                    } catch (e) {
+                        console.error("Audio error in proceedAfterKO:", e);
+                    }
                 }
-                if (window.uiManager) window.uiManager.showVictoryScreen(victor);
+                if (window.uiManager && typeof window.uiManager.showVictoryScreen === "function") {
+                    try {
+                        window.uiManager.showVictoryScreen(victor);
+                    } catch (e) {
+                        console.error("Error showing victory screen:", e);
+                    }
+                }
             } else {
                 this.round++;
                 this.startRound();
@@ -1202,6 +1239,7 @@ class GameEngine {
                 this.replayIndex++;
                 if (this.replayIndex >= this.replayBuffer.length) {
                     this.stopSlowMoReplay();
+                    requestAnimationFrame(() => this.gameLoop());
                     return;
                 }
             }
@@ -1231,11 +1269,13 @@ class GameEngine {
         this.frame++;
 
         // Record snapshot for instant replay ring buffer
-        this.recordFrameSnapshot();
+        if (!this.matchOver) {
+            this.recordFrameSnapshot();
 
-        // Update Bot AI
-        if (this.botAI) {
-            this.botAI.update();
+            // Update Bot AI
+            if (this.botAI) {
+                this.botAI.update();
+            }
         }
 
         // Update Fighters
@@ -2068,7 +2108,11 @@ class GameEngine {
         if (this.onReplayComplete) {
             const cb = this.onReplayComplete;
             this.onReplayComplete = null;
-            cb();
+            try {
+                cb();
+            } catch (err) {
+                console.error("Error in onReplayComplete callback:", err);
+            }
         }
     }
 

@@ -31,6 +31,7 @@ class SoundEngine {
         // Low HP Warning alarm state
         this.lowHpTimer = null;
         this.isLowHpAlarmPlaying = false;
+        this.isClimaxMode = false;
     }
 
     init() {
@@ -345,17 +346,7 @@ class SoundEngine {
     // Pokémon Victory Fanfare
     playVictoryFanfare() {
         if (!this.ctx || this.isMuted) return;
-        const notes = [
-            { f: 523.25, d: 0.15 }, // C5
-            { f: 523.25, d: 0.15 }, // C5
-            { f: 523.25, d: 0.15 }, // C5
-            { f: 523.25, d: 0.35 }, // C5
-            { f: 415.30, d: 0.35 }, // G#4
-            { f: 466.16, d: 0.35 }, // A#4
-            { f: 523.25, d: 0.25 }, // C5
-            { f: 466.16, d: 0.15 }, // A#4
-            { f: 523.25, d: 0.65 }  // C5
-        ];
+        const notes = [\n            { f: 523.25, d: 0.15 }, // C5\n            { f: 523.25, d: 0.15 }, // C5\n            { f: 523.25, d: 0.15 }, // C5\n            { f: 523.25, d: 0.35 }, // C5\n            { f: 415.30, d: 0.35 }, // G#4\n            { f: 466.16, d: 0.35 }, // A#4\n            { f: 523.25, d: 0.25 }, // C5\n            { f: 466.16, d: 0.15 }, // A#4\n            { f: 523.25, d: 0.65 }  // C5\n        ];
 
         let timeOffset = 0;
         notes.forEach(n => {
@@ -564,6 +555,133 @@ class SoundEngine {
         if (preferred) utter.voice = preferred;
 
         window.speechSynthesis.speak(utter);
+    }
+
+    // Dynamic Climax Battle Music Tempo Mode
+    setClimaxMode(active) {
+        if (this.isClimaxMode === active) return;
+        this.isClimaxMode = active;
+        if (this.bgmAudio) {
+            // Speed up track by 15% during danger state
+            this.bgmAudio.playbackRate = active ? 1.15 : 1.0;
+        }
+    }
+
+    // --- PROCEDURAL STADIUM CROWD REACTION SYNTHESIZER ---
+
+    // Generate audio buffer of white noise
+    createNoiseBuffer(durationSeconds = 1.0) {
+        if (!this.ctx) return null;
+        const bufferSize = Math.floor(this.ctx.sampleRate * durationSeconds);
+        const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+            data[i] = Math.random() * 2 - 1;
+        }
+        return buffer;
+    }
+
+    // Crowd Gasp (near-miss sidestep evasion)
+    playCrowdGasp() {
+        if (!this.ctx || this.isMuted) return;
+        const now = this.ctx.currentTime;
+        const noise = this.createNoiseBuffer(0.35);
+        if (!noise) return;
+
+        const src = this.ctx.createBufferSource();
+        src.buffer = noise;
+
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.frequency.setValueAtTime(650, now);
+        filter.frequency.exponentialRampToValueAtTime(260, now + 0.35);
+        filter.Q.setValueAtTime(3.0, now);
+
+        const gain = this.ctx.createGain();
+        gain.gain.setValueAtTime(0.4, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+
+        src.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.sfxGain);
+
+        src.start(now);
+    }
+
+    // Crowd Cheer (3+ hit combo, launcher)
+    playCrowdCheer() {
+        if (!this.ctx || this.isMuted) return;
+        const now = this.ctx.currentTime;
+        const noise = this.createNoiseBuffer(0.9);
+        if (!noise) return;
+
+        const src = this.ctx.createBufferSource();
+        src.buffer = noise;
+
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.frequency.setValueAtTime(550, now);
+        filter.frequency.linearRampToValueAtTime(1100, now + 0.4);
+        filter.frequency.exponentialRampToValueAtTime(700, now + 0.9);
+        filter.Q.setValueAtTime(1.8, now);
+
+        const gain = this.ctx.createGain();
+        gain.gain.setValueAtTime(0.1, now);
+        gain.gain.linearRampToValueAtTime(0.65, now + 0.35);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.9);
+
+        src.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.sfxGain);
+
+        src.start(now);
+    }
+
+    // Crowd Roar (K.O. & Match Finish)
+    playCrowdRoar() {
+        if (!this.ctx || this.isMuted) return;
+        const now = this.ctx.currentTime;
+        const noise = this.createNoiseBuffer(1.8);
+        if (!noise) return;
+
+        const src = this.ctx.createBufferSource();
+        src.buffer = noise;
+
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(1200, now);
+        filter.frequency.exponentialRampToValueAtTime(600, now + 1.8);
+
+        const gain = this.ctx.createGain();
+        gain.gain.setValueAtTime(0.2, now);
+        gain.gain.linearRampToValueAtTime(0.85, now + 0.25);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 1.8);
+
+        src.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.sfxGain);
+
+        src.start(now);
+    }
+
+    // Crowd "Ooh!" (Counter hit, Wall-splat)
+    playCrowdOoh() {
+        if (!this.ctx || this.isMuted) return;
+        const now = this.ctx.currentTime;
+
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(180, now);
+        osc.frequency.exponentialRampToValueAtTime(75, now + 0.45);
+
+        gain.gain.setValueAtTime(0.55, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+
+        osc.connect(gain);
+        gain.connect(this.sfxGain);
+        osc.start(now);
+        osc.stop(now + 0.45);
     }
 
     // Procedural Fallback BGM (if audio files fail or are loading)

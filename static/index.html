@@ -12,6 +12,31 @@
     <div id="game-container">
         <!-- 1. MAIN MENU SCREEN -->
         <div id="screen-menu" class="game-screen">
+            <!-- Trainer Card Status Bar -->
+            <div class="trainer-card-bar">
+                <div class="trainer-avatar-mini-wrapper">
+                    <img id="menu-trainer-avatar" src="/static/assets/sprites/trainers/red.png" alt="Trainer" class="trainer-avatar-img">
+                    <div class="trainer-status-dot online" title="Status: Online"></div>
+                </div>
+                <div class="trainer-card-info">
+                    <div class="trainer-card-row-top">
+                        <span class="trainer-id-tag">TRAINER ID: #2026-SOC</span>
+                        <span class="trainer-rank-pill">CYBER ELITE FOUR</span>
+                    </div>
+                    <div class="trainer-name-display" id="menu-trainer-name">CHAMPION RED</div>
+                </div>
+                <div class="trainer-badges-tray" title="Cybersecurity Championship Badges (8/8)">
+                    <span class="badge-item active" title="Firewall Badge - Defended Perimeter"><span class="badge-emoji">🛡️</span><span class="badge-tooltip">Firewall</span></span>
+                    <span class="badge-item active" title="Crypto Badge - Decrypted AES-256"><span class="badge-emoji">🔐</span><span class="badge-tooltip">Crypto</span></span>
+                    <span class="badge-item active" title="Overload Badge - Mitigated DDoS"><span class="badge-emoji">⚡</span><span class="badge-tooltip">Overload</span></span>
+                    <span class="badge-item active" title="Malware Shield Badge - Disarmed Ransomware"><span class="badge-emoji">👾</span><span class="badge-tooltip">Malware</span></span>
+                    <span class="badge-item active" title="Red Team Badge - Infiltrated Fortress"><span class="badge-emoji">🎯</span><span class="badge-tooltip">Red Team</span></span>
+                    <span class="badge-item active" title="Incinerator Badge - Purged Malicious C2"><span class="badge-emoji">🔥</span><span class="badge-tooltip">Incinerator</span></span>
+                    <span class="badge-item active" title="Torrent Badge - Network Flow Analysis"><span class="badge-emoji">🌊</span><span class="badge-tooltip">Torrent</span></span>
+                    <span class="badge-item active" title="Zero-Day Badge - Defeated Overlord"><span class="badge-emoji">🏆</span><span class="badge-tooltip">Zero-Day</span></span>
+                </div>
+            </div>
+
             <div class="poke-logo-wrapper">
                 <div class="pokeball-badge"></div>
                 <h1 class="game-logo">CYBERMON</h1>
@@ -19,25 +44,40 @@
             <div class="sub-tagline">⚡ POKÉMON LEAGUE // CYBERSECURITY TOURNAMENT 2026 ⚡</div>
 
             <div class="menu-options">
-                <button id="btn-mode-bot" class="cyber-btn">
-                    <span>1V1 VS CYBER BOT</span>
-                    <span>▶</span>
+                <button id="btn-mode-bot" class="cyber-btn poke-capsule-btn">
+                    <div class="btn-left-content">
+                        <img src="/static/assets/sprites/items/poke-ball.png" class="btn-ball-img" alt="Pokeball">
+                        <span>1V1 VS CYBER BOT</span>
+                    </div>
+                    <span class="btn-arrow">▶</span>
                 </button>
-                <button id="btn-mode-local" class="cyber-btn">
-                    <span>1V1 LOCAL PVP</span>
-                    <span>▶</span>
+                <button id="btn-mode-local" class="cyber-btn poke-capsule-btn">
+                    <div class="btn-left-content">
+                        <img src="/static/assets/sprites/items/ultra-ball.png" class="btn-ball-img" alt="Ultra Ball">
+                        <span>1V1 LOCAL PVP</span>
+                    </div>
+                    <span class="btn-arrow">▶</span>
                 </button>
-                <button id="btn-mode-online" class="cyber-btn">
-                    <span>1V1 LAN / ONLINE PVP</span>
-                    <span>▶</span>
+                <button id="btn-mode-online" class="cyber-btn poke-capsule-btn">
+                    <div class="btn-left-content">
+                        <img src="/static/assets/sprites/items/master-ball.png" class="btn-ball-img" alt="Master Ball">
+                        <span>1V1 UNION ROOM // ONLINE</span>
+                    </div>
+                    <span class="btn-arrow">▶</span>
                 </button>
-                <button id="btn-mode-training" class="cyber-btn">
-                    <span>SOC SANDBOX / TRAINING</span>
-                    <span>▶</span>
+                <button id="btn-mode-training" class="cyber-btn poke-capsule-btn">
+                    <div class="btn-left-content">
+                        <img src="/static/assets/sprites/items/poke-ball.png" class="btn-ball-img" alt="Pokeball">
+                        <span>SOC SANDBOX // TRAINING</span>
+                    </div>
+                    <span class="btn-arrow">▶</span>
                 </button>
-                <button id="btn-view-controls" class="cyber-btn small">
-                    <span>SIMPLIFIED CONTROLS &amp; MOVES</span>
-                    <span>⚙</span>
+                <button id="btn-view-controls" class="cyber-btn small poke-capsule-btn">
+                    <div class="btn-left-content">
+                        <span style="font-size: 14px;">⚙</span>
+                        <span>SIMPLIFIED CONTROLS &amp; MOVES</span>
+                    </div>
+                    <span class="btn-arrow">▶</span>
                 </button>
 
                 <!-- BGM Track Selector -->
@@ -93,19 +133,105 @@
             </div>
         </div>
 
-        <!-- 3. ONLINE LOBBY SCREEN -->
+        <!-- 3. ONLINE LOBBY / UNION ROOM SCREEN -->
         <div id="screen-online-lobby" class="game-screen hidden">
-            <h1 class="game-logo" style="font-size: 32px;">LAN / ONLINE MULTIPLAYER</h1>
-            <div class="sub-tagline">CONNECT TO A PYTHON WEBSOCKET ROOM</div>
-
-            <div class="menu-options" style="width: 440px;">
-                <div style="display: flex; gap: 10px;">
-                    <input type="text" id="room-code-input" placeholder="ENTER ROOM CODE (e.g. CYBER-404)" style="flex: 1; padding: 12px; background: rgba(5, 11, 20, 0.9); border: 1.5px solid var(--neon-blue); color: #fff; border-radius: 4px; font-family: 'Orbitron', monospace; font-size: 14px;">
-                    <button id="btn-join-room" class="cyber-btn small" style="padding: 10px 18px;">JOIN</button>
+            <div class="union-room-header">
+                <div class="union-title-row">
+                    <img src="/static/assets/sprites/items/ultra-ball.png" class="union-ball-icon" alt="Ball">
+                    <h1 class="game-logo" style="font-size: 26px; margin: 0;">UNION ROOM // CYBER BATTLE CLUB</h1>
+                    <img src="/static/assets/sprites/items/ultra-ball.png" class="union-ball-icon" alt="Ball">
                 </div>
-                <button id="btn-create-room" class="cyber-btn">CREATE RANDOM ROOM</button>
-                <div id="online-status" style="font-family: 'Orbitron', monospace; font-size: 13px; color: var(--neon-yellow); text-align: center; margin-top: 10px;">Waiting for connection...</div>
-                <button onclick="window.uiManager.showScreen('menu')" class="cyber-btn small" style="margin-top: 20px; justify-content: center;">BACK TO MAIN MENU</button>
+                <div class="sub-tagline" style="margin-bottom: 12px; font-size: 11px;">SILPH CO. CYBER-LINK DIRECT COMMUNICATOR</div>
+            </div>
+
+            <div class="union-room-body">
+                <!-- Left: Trainer Avatar Selector & Profile -->
+                <div class="trainer-select-panel">
+                    <div class="panel-header" style="font-size: 14px; margin-bottom: 8px;">SELECT TRAINER AVATAR</div>
+                    <div class="trainer-avatar-grid" id="trainer-avatar-grid"></div>
+                    <div class="trainer-active-detail">
+                        <span class="detail-label">ACTIVE COMBATANT:</span>
+                        <span id="active-trainer-name" class="detail-val">CHAMPION RED</span>
+                    </div>
+                </div>
+
+                <!-- Right: Pokémon Center PC Terminal -->
+                <div class="terminal-screen-box">
+                    <div class="terminal-topbar">
+                        <div class="terminal-leds">
+                            <span class="terminal-led red"></span>
+                            <span class="terminal-led yellow"></span>
+                            <span class="terminal-led green"></span>
+                        </div>
+                        <span class="terminal-title">BATTLE CLUB TERMINAL // NET-LINK</span>
+                        <span class="radar-ping">● LIVE</span>
+                    </div>
+                    <div class="terminal-radar-area">
+                        <div class="radar-circle"></div>
+                        <div class="radar-line"></div>
+                        <div class="terminal-status-text" id="online-status">Select an avatar and enter room code to challenge.</div>
+                    </div>
+
+                    <div class="terminal-actions">
+                        <div class="room-input-group">
+                            <input type="text" id="room-code-input" placeholder="ROOM CODE (e.g. CYBER-404)" maxlength="16">
+                            <button id="btn-join-room" class="cyber-btn small">LINK START</button>
+                        </div>
+                        <button id="btn-create-room" class="cyber-btn" style="width: 100%; justify-content: center;">
+                            <span>⚡ GENERATE DIRECT MATCH CODE</span>
+                        </button>
+                        <button onclick="window.uiManager.showScreen('menu')" class="cyber-btn small" style="width: 100%; justify-content: center; margin-top: 5px;">
+                            LEAVE UNION ROOM
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- VS MATCHUP CINEMATIC SPLASH OVERLAY -->
+        <div id="vs-splash" class="vs-splash-overlay hidden">
+            <div class="vs-side vs-left" id="vs-left-side">
+                <div class="vs-side-bg"></div>
+                <div class="vs-card">
+                    <div class="vs-trainer-badge">
+                        <img id="vs-p1-trainer-img" class="vs-trainer-img" src="/static/assets/sprites/trainers/red.png" alt="Trainer">
+                        <div class="vs-trainer-info">
+                            <div class="vs-player-tag">PLAYER 1</div>
+                            <div id="vs-p1-trainer-name" class="vs-trainer-name">CHAMPION RED</div>
+                        </div>
+                    </div>
+                    <div class="vs-pokemon-display">
+                        <img id="vs-p1-pokemon-img" class="vs-pokemon-img" src="/static/assets/sprites/lucario_front.gif" alt="P1">
+                        <div id="vs-p1-pokemon-name" class="vs-pokemon-name">LUCARIO</div>
+                        <div id="vs-p1-pokemon-title" class="vs-pokemon-title">THE AURA FIREWALL</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="vs-center-emblem">
+                <div class="vs-lightning-ring"></div>
+                <div class="vs-circle">
+                    <div class="vs-text">VS</div>
+                </div>
+                <div class="vs-match-tag">CYBER CHAMPIONSHIP</div>
+            </div>
+
+            <div class="vs-side vs-right" id="vs-right-side">
+                <div class="vs-side-bg"></div>
+                <div class="vs-card right-align">
+                    <div class="vs-trainer-badge reverse">
+                        <div class="vs-trainer-info text-right">
+                            <div class="vs-player-tag" id="vs-p2-role-tag">CYBER BOT</div>
+                            <div id="vs-p2-trainer-name" class="vs-trainer-name">CYNTHIA</div>
+                        </div>
+                        <img id="vs-p2-trainer-img" class="vs-trainer-img" src="/static/assets/sprites/trainers/cynthia.png" alt="Trainer">
+                    </div>
+                    <div class="vs-pokemon-display text-right">
+                        <img id="vs-p2-pokemon-img" class="vs-pokemon-img" src="/static/assets/sprites/gengar_front.gif" alt="P2">
+                        <div id="vs-p2-pokemon-name" class="vs-pokemon-name">GENGAR</div>
+                        <div id="vs-p2-pokemon-title" class="vs-pokemon-title">ZERO-DAY PHANTOM</div>
+                    </div>
+                </div>
             </div>
         </div>
 

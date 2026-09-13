@@ -50,6 +50,8 @@ class Fighter {
         this.hasHitThisMove = false;
         this.comboString = [];
         this.lastInputTime = 0;
+        this.lightComboStep = 0;
+        this.lastLightInputTime = 0;
 
         // Buffs from Cybersecurity Trivia
         this.buffs = {
@@ -303,6 +305,44 @@ class Fighter {
         if (window.soundEngine) window.soundEngine.playWhoosh();
     }
 
+    // Simplified Modern Combat Controls
+    handleLightInput() {
+        const now = performance.now();
+        if (now - this.lastLightInputTime < 600) {
+            this.lightComboStep = (this.lightComboStep + 1) % 3;
+        } else {
+            this.lightComboStep = 0;
+        }
+        this.lastLightInputTime = now;
+
+        if (this.lightComboStep === 0) {
+            this.executeAttack("1");
+        } else if (this.lightComboStep === 1) {
+            this.executeAttack("2");
+        } else {
+            this.executeAttack("4");
+        }
+    }
+
+    handleHeavyInput() {
+        // Effortless launcher: sends opponent airborne for juggle combos
+        if (this.charData.moves && this.charData.moves["df2"]) {
+            this.executeAttack("df2");
+        } else if (this.charData.moves && this.charData.moves["4"]) {
+            this.executeAttack("4");
+        } else {
+            this.executeAttack("2");
+        }
+    }
+
+    handleSpecialInput() {
+        this.executeAttack("special");
+    }
+
+    handleSuperInput() {
+        this.executeRageArt();
+    }
+
     executeAttack(moveKey) {
         if (!this.canAct()) return;
 
@@ -349,8 +389,10 @@ class Fighter {
         // Cinematic freeze & announcer
         if (window.gameEngine) {
             window.gameEngine.triggerSuperFreeze(60, this);
-            window.soundEngine.playRageArt();
-            window.soundEngine.announce("ZERO DAY EXPLOIT!");
+            if (window.soundEngine) {
+                window.soundEngine.playCry(this.charData.id, 1.0);
+                window.soundEngine.announce(this.charData.rageArtName || "ZERO DAY EXPLOIT!");
+            }
         }
     }
 
@@ -494,6 +536,9 @@ class Fighter {
         }
 
         this.hp = Math.max(0, this.hp - damage);
+        if (this.hp > 0 && (this.hp / this.maxHp) <= 0.25) {
+            if (window.soundEngine) window.soundEngine.startLowHpAlarm();
+        }
 
         // Sparks & Sound
         if (window.soundEngine) {
@@ -631,31 +676,26 @@ class GameEngine {
             this.p1.lastTapDownTime = now;
         }
 
-        // Player 1 Attacks (J=1/LP, I=2/RP, K=3/LK, O=4/RK, U=Special, Space=RageArt)
+        // Player 1 Attacks (Modern Simplified Layout: J=Light, K=Heavy/Launcher, L=Special, Space=Super)
         if (isDown) {
             if (code === "KeyJ") {
-                this.p1.executeAttack("1");
-            } else if (code === "KeyI") {
-                // Check if df+2 launcher input
-                if (this.p1.inputDown && ((this.p1.facing === 1 && this.p1.inputRight) || (this.p1.facing === -1 && this.p1.inputLeft))) {
-                    this.p1.executeAttack("df2");
-                } else if ((this.p1.facing === 1 && this.p1.inputRight) || (this.p1.facing === -1 && this.p1.inputLeft)) {
-                    this.p1.executeAttack("ff2");
-                } else {
-                    this.p1.executeAttack("2");
-                }
+                this.p1.handleLightInput();
             } else if (code === "KeyK") {
-                this.p1.executeAttack("3");
-            } else if (code === "KeyO" || code === "KeyL") {
+                this.p1.handleHeavyInput();
+            } else if (code === "KeyL") {
+                this.p1.handleSpecialInput();
+            } else if (code === "Space" || code === "KeyU") {
+                this.p1.handleSuperInput();
+            } else if (code === "KeyI") {
+                // Legacy Tekken RP
+                if (this.p1.inputDown) this.p1.executeAttack("df2");
+                else this.p1.executeAttack("2");
+            } else if (code === "KeyO") {
                 this.p1.executeAttack("4");
-            } else if (code === "KeyU") {
-                this.p1.executeAttack("special");
-            } else if (code === "Space") {
-                this.p1.executeRageArt();
             }
         }
 
-        // Local Player 2 Controls (Arrow Keys + Numpad or 7/8/4/5)
+        // Local Player 2 Controls (Arrow Keys + Numpad or B/N/M/Enter)
         if (this.mode === 'pvp_local' && this.p2) {
             if (code === "ArrowLeft") this.p2.inputLeft = isDown;
             if (code === "ArrowRight") this.p2.inputRight = isDown;
@@ -663,17 +703,22 @@ class GameEngine {
             if (code === "ArrowDown") this.p2.inputDown = isDown;
 
             if (isDown) {
-                if (code === "Numpad1" || code === "Digit7") this.p2.executeAttack("1");
-                else if (code === "Numpad2" || code === "Digit8") {
-                    if (this.p2.inputDown && ((this.p2.facing === 1 && this.p2.inputRight) || (this.p2.facing === -1 && this.p2.inputLeft))) {
-                        this.p2.executeAttack("df2");
-                    } else {
-                        this.p2.executeAttack("2");
-                    }
-                } else if (code === "Numpad4" || code === "Digit9") this.p2.executeAttack("3");
-                else if (code === "Numpad5" || code === "Digit0") this.p2.executeAttack("4");
-                else if (code === "Numpad6" || code === "Minus") this.p2.executeAttack("special");
-                else if (code === "Enter" || code === "NumpadEnter") this.p2.executeRageArt();
+                // Simplified P2: Numpad 1 / KeyB = Light, Numpad 2 / KeyN = Heavy/Launcher, Numpad 3 / KeyM = Special, Enter = Super
+                if (code === "Numpad1" || code === "Digit1" || code === "KeyB") {
+                    this.p2.handleLightInput();
+                } else if (code === "Numpad2" || code === "Digit2" || code === "KeyN") {
+                    this.p2.handleHeavyInput();
+                } else if (code === "Numpad3" || code === "Digit3" || code === "KeyM") {
+                    this.p2.handleSpecialInput();
+                } else if (code === "Enter" || code === "NumpadEnter") {
+                    this.p2.handleSuperInput();
+                } else if (code === "Numpad4" || code === "Digit9") {
+                    this.p2.executeAttack("3");
+                } else if (code === "Numpad5" || code === "Digit0") {
+                    this.p2.executeAttack("4");
+                } else if (code === "Numpad6" || code === "Minus") {
+                    this.p2.executeAttack("special");
+                }
             }
         }
     }
@@ -751,8 +796,13 @@ class GameEngine {
         if (winner === this.p1) this.p1Wins++;
         else if (winner === this.p2) this.p2Wins++;
 
-        this.showBanner("K.O.!", "#ff1744", 120);
-        if (window.soundEngine) window.soundEngine.announce("K.O.!");
+        if (window.soundEngine) {
+            window.soundEngine.stopLowHpAlarm();
+            if (loser) window.soundEngine.playCry(loser.charData.id, 0.9);
+            window.soundEngine.playFaint();
+            window.soundEngine.announce("K.O.!");
+        }
+        this.showBanner("K.O.!", "#ee1515", 120);
 
         setTimeout(() => {
             if (this.p1Wins >= 2 || this.p2Wins >= 2) {
@@ -972,63 +1022,164 @@ class GameEngine {
     }
 
     renderStage(ctx, w, h) {
-        // Cyber Arena Gradient
+        // 1. Pokémon Stadium Arena Dome Gradient
         const grad = ctx.createLinearGradient(0, 0, 0, h);
-        grad.addColorStop(0, "#050b14");
-        grad.addColorStop(0.65, "#0d1b2a");
-        grad.addColorStop(1, "#02070e");
+        grad.addColorStop(0, "#050b18");
+        grad.addColorStop(0.45, "#0e1e38");
+        grad.addColorStop(1, "#081220");
         ctx.fillStyle = grad;
         ctx.fillRect(-200, 0, w + 400, h);
 
-        // Cyber Server Towers in Background
-        for (let x = -100; x <= 1100; x += 150) {
-            ctx.fillStyle = "#112233";
-            ctx.fillRect(x, 140, 90, 360);
+        // 2. Stadium Crowd & Floodlight Beams
+        ctx.save();
+        // Left Floodlight Beam
+        const leftBeam = ctx.createLinearGradient(40, 0, 350, 520);
+        leftBeam.addColorStop(0, "rgba(255, 255, 255, 0.22)");
+        leftBeam.addColorStop(1, "rgba(42, 117, 187, 0.0)");
+        ctx.fillStyle = leftBeam;
+        ctx.beginPath();
+        ctx.moveTo(30, 0);
+        ctx.lineTo(120, 0);
+        ctx.lineTo(480, 560);
+        ctx.lineTo(200, 560);
+        ctx.fill();
 
-            // Blinking green/amber server LEDs
-            for (let y = 160; y < 480; y += 22) {
-                const ledColor = (Math.sin(this.frame * 0.05 + x + y) > 0) ? "#00e676" : "#ff9100";
-                ctx.fillStyle = ledColor;
-                ctx.fillRect(x + 10, y, 6, 3);
-                ctx.fillRect(x + 22, y, 6, 3);
-                ctx.fillStyle = "#00e5ff";
-                ctx.fillRect(x + 40, y, 35, 2);
+        // Right Floodlight Beam
+        const rightBeam = ctx.createLinearGradient(w - 40, 0, w - 350, 520);
+        rightBeam.addColorStop(0, "rgba(255, 255, 255, 0.22)");
+        rightBeam.addColorStop(1, "rgba(42, 117, 187, 0.0)");
+        ctx.fillStyle = rightBeam;
+        ctx.beginPath();
+        ctx.moveTo(w - 30, 0);
+        ctx.lineTo(w - 120, 0);
+        ctx.lineTo(w - 480, 560);
+        ctx.lineTo(w - 200, 560);
+        ctx.fill();
+        ctx.restore();
+
+        // 3. Electronic Pokémon League Stadium Billboard
+        ctx.save();
+        ctx.fillStyle = "rgba(10, 22, 45, 0.92)";
+        ctx.fillRect(150, 110, 700, 48);
+        ctx.strokeStyle = "#ffcb05";
+        ctx.lineWidth = 2;
+        ctx.strokeRect(150, 110, 700, 48);
+
+        ctx.font = "bold 16px 'Orbitron', monospace, sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillStyle = "#ffcb05";
+        ctx.shadowColor = "#ffcb05";
+        ctx.shadowBlur = 10;
+        ctx.fillText("⚡ POKÉMON LEAGUE // CYBER TOURNAMENT 2026 ⚡", 500, 140);
+        ctx.restore();
+
+        // 4. Stadium Grandstand Banners
+        for (let x = -80; x <= w + 80; x += 180) {
+            ctx.fillStyle = "#152642";
+            ctx.fillRect(x, 175, 140, 240);
+            ctx.strokeStyle = "rgba(42, 117, 187, 0.5)";
+            ctx.lineWidth = 1;
+            ctx.strokeRect(x, 175, 140, 240);
+
+            // Crowd silhouettes / LED dots
+            for (let y = 195; y < 400; y += 22) {
+                const led = (Math.sin(this.frame * 0.04 + x + y) > 0) ? "#ffcb05" : "#2a75bb";
+                ctx.fillStyle = led;
+                ctx.fillRect(x + 15, y, 6, 4);
+                ctx.fillRect(x + 35, y, 6, 4);
+                ctx.fillRect(x + 55, y, 6, 4);
+                ctx.fillRect(x + 75, y, 6, 4);
+                ctx.fillRect(x + 95, y, 6, 4);
             }
         }
 
-        // Floor Grid (Tekken perspective grid)
-        const floorY = 520;
-        ctx.strokeStyle = "rgba(0, 229, 255, 0.35)";
-        ctx.lineWidth = 1.5;
+        // 5. Pokémon Stadium Turf Floor
+        const floorY = 510;
+        const turfGrad = ctx.createLinearGradient(0, floorY, 0, h);
+        turfGrad.addColorStop(0, "#1e4726");
+        turfGrad.addColorStop(0.5, "#17381d");
+        turfGrad.addColorStop(1, "#0d2212");
+        ctx.fillStyle = turfGrad;
+        ctx.fillRect(-200, floorY, w + 400, h - floorY + 60);
 
-        // Horizontal perspective lines
-        for (let y = floorY; y <= h + 50; y += 24) {
+        // Perspective Turf Grid Lines
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.2)";
+        ctx.lineWidth = 1.5;
+        for (let y = floorY; y <= h + 50; y += 22) {
             ctx.beginPath();
             ctx.moveTo(-200, y);
             ctx.lineTo(w + 400, y);
             ctx.stroke();
         }
-
-        // Vertical converging grid lines
-        for (let x = -200; x <= w + 400; x += 60) {
+        for (let x = -200; x <= w + 400; x += 75) {
             ctx.beginPath();
             ctx.moveTo(x, floorY);
-            ctx.lineTo((x - 500) * 1.6 + 500, h + 50);
+            ctx.lineTo((x - 500) * 1.55 + 500, h + 50);
             ctx.stroke();
         }
 
-        // Digital Firewall Stage Barriers (Left & Right boundaries)
-        const barrierGradLeft = ctx.createLinearGradient(120, 0, 80, 0);
-        barrierGradLeft.addColorStop(0, "rgba(255, 23, 68, 0.4)");
-        barrierGradLeft.addColorStop(1, "rgba(255, 23, 68, 0)");
-        ctx.fillStyle = barrierGradLeft;
-        ctx.fillRect(80, 100, 40, 430);
+        // 6. The Center Pokéball Court Ring (Classic Stadium Center Circle)
+        ctx.save();
+        const courtCenterX = 500;
+        const courtCenterY = 545;
+        const rx = 160;
+        const ry = 42;
 
-        const barrierGradRight = ctx.createLinearGradient(880, 0, 920, 0);
-        barrierGradRight.addColorStop(0, "rgba(255, 23, 68, 0.4)");
-        barrierGradRight.addColorStop(1, "rgba(255, 23, 68, 0)");
+        // Outer white border
+        ctx.strokeStyle = "#ffffff";
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.ellipse(courtCenterX, courtCenterY, rx, ry, 0, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // Top half: Red
+        ctx.fillStyle = "rgba(238, 21, 21, 0.45)";
+        ctx.beginPath();
+        ctx.ellipse(courtCenterX, courtCenterY, rx - 2, ry - 1, 0, Math.PI, Math.PI * 2);
+        ctx.fill();
+
+        // Bottom half: White
+        ctx.fillStyle = "rgba(255, 255, 255, 0.45)";
+        ctx.beginPath();
+        ctx.ellipse(courtCenterX, courtCenterY, rx - 2, ry - 1, 0, 0, Math.PI);
+        ctx.fill();
+
+        // Center seam line
+        ctx.strokeStyle = "#111111";
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(courtCenterX - rx + 2, courtCenterY);
+        ctx.lineTo(courtCenterX + rx - 2, courtCenterY);
+        ctx.stroke();
+
+        // Center Pokéball Button
+        ctx.fillStyle = "#ffffff";
+        ctx.strokeStyle = "#111111";
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.ellipse(courtCenterX, courtCenterY, 28, 12, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        // Inner core glow
+        ctx.fillStyle = "#00e5ff";
+        ctx.beginPath();
+        ctx.ellipse(courtCenterX, courtCenterY, 14, 6, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+
+        // 7. Left & Right Stage Ring Barriers
+        const barrierGradLeft = ctx.createLinearGradient(90, 0, 60, 0);
+        barrierGradLeft.addColorStop(0, "rgba(0, 229, 255, 0.45)");
+        barrierGradLeft.addColorStop(1, "rgba(0, 229, 255, 0)");
+        ctx.fillStyle = barrierGradLeft;
+        ctx.fillRect(60, 80, 40, 450);
+
+        const barrierGradRight = ctx.createLinearGradient(910, 0, 940, 0);
+        barrierGradRight.addColorStop(0, "rgba(0, 229, 255, 0.45)");
+        barrierGradRight.addColorStop(1, "rgba(0, 229, 255, 0)");
         ctx.fillStyle = barrierGradRight;
-        ctx.fillRect(880, 100, 40, 430);
+        ctx.fillRect(910, 80, 40, 450);
     }
 
     renderShadow(ctx, f) {
@@ -1108,111 +1259,224 @@ class GameEngine {
     renderHUD(ctx, w, h) {
         if (!this.p1 || !this.p2) return;
 
-        // Timer in center
+        // 1. Center Timer & Pokéball Emblem
         ctx.save();
+        const centerX = w / 2;
+
+        // Center mini Pokéball
+        ctx.save();
+        ctx.translate(centerX, 25);
+        ctx.beginPath();
+        ctx.arc(0, 0, 14, Math.PI, Math.PI * 2);
+        ctx.fillStyle = "#ee1515";
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(0, 0, 14, 0, Math.PI);
+        ctx.fillStyle = "#ffffff";
+        ctx.fill();
+        ctx.strokeStyle = "#111111";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(0, 0, 4, 0, Math.PI * 2);
+        ctx.fillStyle = "#ffffff";
+        ctx.fill();
+        ctx.stroke();
+        ctx.restore();
+
+        // Timer numerals
         ctx.fillStyle = "#ffffff";
         ctx.font = "bold 38px 'Orbitron', monospace, sans-serif";
         ctx.textAlign = "center";
-        ctx.shadowColor = "#00e5ff";
-        ctx.shadowBlur = 10;
-        ctx.fillText(this.roundTime.toString().padStart(2, '0'), w / 2, 60);
+        ctx.shadowColor = "#ffcb05";
+        ctx.shadowBlur = 12;
+        ctx.fillText(this.roundTime.toString().padStart(2, '0'), centerX, 68);
 
-        // Round Win Markers
-        ctx.font = "bold 16px 'Orbitron', monospace";
-        ctx.fillStyle = "#00e5ff";
-        ctx.fillText(`ROUND ${this.round}`, w / 2, 90);
+        // Round indicator
+        ctx.font = "bold 14px 'Orbitron', monospace";
+        ctx.fillStyle = "#ffcb05";
+        ctx.fillText("ROUND " + this.round, centerX, 92);
 
-        // P1 Win Dots
+        // P1 Won Pokéballs (Left of timer)
         for (let i = 0; i < 2; i++) {
+            const bx = centerX - 45 - (i * 22);
             ctx.beginPath();
-            ctx.arc(w / 2 - 40 - (i * 20), 85, 6, 0, Math.PI * 2);
-            ctx.fillStyle = (i < this.p1Wins) ? "#ffea00" : "#223344";
+            ctx.arc(bx, 88, 7, 0, Math.PI * 2);
+            ctx.fillStyle = (i < this.p1Wins) ? "#ee1515" : "#1c2838";
             ctx.fill();
-            ctx.strokeStyle = "#00e5ff";
-            ctx.stroke();
-        }
-        // P2 Win Dots
-        for (let i = 0; i < 2; i++) {
-            ctx.beginPath();
-            ctx.arc(w / 2 + 40 + (i * 20), 85, 6, 0, Math.PI * 2);
-            ctx.fillStyle = (i < this.p2Wins) ? "#ffea00" : "#223344";
-            ctx.fill();
-            ctx.strokeStyle = "#00e5ff";
+            ctx.strokeStyle = "#ffcb05";
+            ctx.lineWidth = 1.5;
             ctx.stroke();
         }
 
-        // P1 Health Bar (Left)
-        const barW = 380;
-        const barH = 26;
-        const p1HpRatio = Math.max(0, this.p1.hp / this.p1.maxHp);
-        ctx.fillStyle = "rgba(10, 20, 35, 0.85)";
-        ctx.fillRect(40, 35, barW, barH);
-        ctx.strokeStyle = "#00e5ff";
+        // P2 Won Pokéballs (Right of timer)
+        for (let i = 0; i < 2; i++) {
+            const bx = centerX + 45 + (i * 22);
+            ctx.beginPath();
+            ctx.arc(bx, 88, 7, 0, Math.PI * 2);
+            ctx.fillStyle = (i < this.p2Wins) ? "#ee1515" : "#1c2838";
+            ctx.fill();
+            ctx.strokeStyle = "#ffcb05";
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+        }
+        ctx.restore();
+
+        // 2. PLAYER 1 POKÉMON BATTLE PLATE (Left)
+        this.renderPokemonPlate(ctx, this.p1, 35, 20, 390, false);
+
+        // 3. PLAYER 2 POKÉMON BATTLE PLATE (Right)
+        this.renderPokemonPlate(ctx, this.p2, w - 425, 20, 390, true);
+
+        // 4. In-Game Controls Bar (Bottom)
+        this.renderControlsBar(ctx, w, h);
+    }
+
+    renderPokemonPlate(ctx, f, x, y, width, isP2) {
+        ctx.save();
+        const pColor = (f.charData.themeColors && f.charData.themeColors.primary) || "#2a75bb";
+
+        // Plate Background Container
+        ctx.fillStyle = "rgba(14, 25, 45, 0.92)";
+        ctx.strokeStyle = pColor;
         ctx.lineWidth = 2;
-        ctx.strokeRect(40, 35, barW, barH);
+        ctx.beginPath();
+        ctx.roundRect(x, y, width, 92, 8);
+        ctx.fill();
+        ctx.stroke();
 
-        const p1Grad = ctx.createLinearGradient(40, 0, 40 + barW, 0);
-        p1Grad.addColorStop(0, this.p1.inRage ? "#ff1744" : "#ffea00");
-        p1Grad.addColorStop(1, this.p1.inRage ? "#d50000" : "#00e676");
-        ctx.fillStyle = p1Grad;
-        ctx.fillRect(40 + (barW * (1 - p1HpRatio)), 35, barW * p1HpRatio, barH);
+        // Accent top border strip
+        ctx.fillStyle = pColor;
+        ctx.beginPath();
+        ctx.roundRect(x, y, width, 5, [8, 8, 0, 0]);
+        ctx.fill();
 
-        // P1 Firewall (Guard) Bar
-        const p1FwRatio = Math.max(0, this.p1.firewall / this.p1.maxFirewall);
-        ctx.fillStyle = "#00bcd4";
-        ctx.fillRect(40 + (barW * (1 - p1FwRatio)), 65, barW * p1FwRatio, 8);
-
-        // P1 Name & Title
+        // Pokémon Name & Gender / Level
         ctx.fillStyle = "#ffffff";
-        ctx.font = "bold 20px 'Orbitron', monospace";
+        ctx.font = "bold 19px 'Orbitron', monospace, sans-serif";
+        ctx.textAlign = isP2 ? "right" : "left";
+        const nameX = isP2 ? x + width - 14 : x + 14;
+        ctx.fillText(f.charData.name.toUpperCase(), nameX, y + 26);
+
+        // Level Badge
+        ctx.font = "bold 12px 'Orbitron', monospace";
+        ctx.fillStyle = "#ffcb05";
+        const lvlX = isP2 ? x + 14 : x + width - 70;
+        ctx.fillText("Lv. 100", lvlX, y + 26);
+
+        // Type Pill Badges
+        const types = f.charData.types || ["NORMAL"];
+        let typeBadgeX = isP2 ? x + width - 170 : x + 125;
+        types.forEach(t => {
+            const tInfo = (window.POKEMON_TYPES && window.POKEMON_TYPES[t]) || { color: "#888", textColor: "#fff" };
+            ctx.fillStyle = tInfo.color;
+            ctx.beginPath();
+            ctx.roundRect(typeBadgeX, y + 13, 44, 15, 4);
+            ctx.fill();
+            ctx.fillStyle = tInfo.textColor || "#fff";
+            ctx.font = "bold 9px 'Orbitron', sans-serif";
+            ctx.textAlign = "center";
+            ctx.fillText(t, typeBadgeX + 22, y + 24);
+            typeBadgeX += 48;
+        });
+
+        // HP Bar Layout
+        const barX = x + 44;
+        const barY = y + 42;
+        const barW = width - 58;
+        const barH = 18;
+
+        // The iconic [HP] Yellow Box Label
+        ctx.fillStyle = "#ffcb05";
+        ctx.beginPath();
+        ctx.roundRect(x + 12, barY - 1, 26, 20, 3);
+        ctx.fill();
+        ctx.fillStyle = "#111111";
+        ctx.font = "900 11px 'Orbitron', sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText("HP", x + 25, barY + 14);
+
+        // HP Bar Track (Empty)
+        ctx.fillStyle = "#111822";
+        ctx.beginPath();
+        ctx.roundRect(barX, barY, barW, barH, 4);
+        ctx.fill();
+        ctx.strokeStyle = "#334455";
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        // Dynamic HP Color: Green (>50%), Yellow (20-50%), Red (<20%)
+        const hpRatio = Math.max(0, f.hp / f.maxHp);
+        let hpColor = "#38a169"; // Vibrant Green
+        if (hpRatio <= 0.2) {
+            hpColor = (this.frame % 30 < 15) ? "#e53e3e" : "#ff6b6b"; // Flashing Red
+        } else if (hpRatio <= 0.5) {
+            hpColor = "#ecc94b"; // Caution Yellow
+        }
+
+        if (hpRatio > 0) {
+            ctx.fillStyle = hpColor;
+            ctx.beginPath();
+            const fillW = Math.max(6, barW * hpRatio);
+            ctx.roundRect(barX, barY, fillW, barH, 4);
+            ctx.fill();
+        }
+
+        // Numeric HP readout
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "bold 11px 'Orbitron', monospace";
+        ctx.textAlign = isP2 ? "right" : "left";
+        ctx.fillText(Math.round(f.hp) + " / " + f.maxHp, isP2 ? barX + barW - 6 : barX + 6, barY + 13);
+
+        // Firewall Defense Bar (Guard Gauge)
+        const fwRatio = Math.max(0, f.firewall / f.maxFirewall);
+        const fwY = y + 68;
+        ctx.fillStyle = "#00e5ff";
+        ctx.font = "10px 'Orbitron', monospace";
         ctx.textAlign = "left";
-        ctx.fillText(this.p1.charData.name.toUpperCase(), 40, 28);
-        ctx.font = "12px 'Orbitron', monospace";
+        ctx.fillText("FIREWALL", x + 14, fwY + 9);
+
+        // Firewall Bar Track
+        const fwBarX = x + 85;
+        const fwBarW = width - 100;
+        ctx.fillStyle = "#111822";
+        ctx.fillRect(fwBarX, fwY, fwBarW, 8);
         ctx.fillStyle = "#00e5ff";
-        ctx.fillText(`FIREWALL: ${Math.round(p1FwRatio * 100)}%`, 40, 88);
+        ctx.fillRect(fwBarX, fwY, fwBarW * fwRatio, 8);
 
-        // P2 Health Bar (Right)
-        const p2HpRatio = Math.max(0, this.p2.hp / this.p2.maxHp);
-        const p2StartX = w - 40 - barW;
-        ctx.fillStyle = "rgba(10, 20, 35, 0.85)";
-        ctx.fillRect(p2StartX, 35, barW, barH);
-        ctx.strokeStyle = "#00e5ff";
-        ctx.strokeRect(p2StartX, 35, barW, barH);
-
-        const p2Grad = ctx.createLinearGradient(p2StartX, 0, p2StartX + barW, 0);
-        p2Grad.addColorStop(0, this.p2.inRage ? "#ff1744" : "#00e676");
-        p2Grad.addColorStop(1, this.p2.inRage ? "#d50000" : "#ffea00");
-        ctx.fillStyle = p2Grad;
-        ctx.fillRect(p2StartX, 35, barW * p2HpRatio, barH);
-
-        // P2 Firewall Bar
-        const p2FwRatio = Math.max(0, this.p2.firewall / this.p2.maxFirewall);
-        ctx.fillStyle = "#00bcd4";
-        ctx.fillRect(p2StartX, 65, barW * p2FwRatio, 8);
-
-        // P2 Name & Title
-        ctx.fillStyle = "#ffffff";
-        ctx.font = "bold 20px 'Orbitron', monospace";
-        ctx.textAlign = "right";
-        ctx.fillText(this.p2.charData.name.toUpperCase(), w - 40, 28);
-        ctx.font = "12px 'Orbitron', monospace";
-        ctx.fillStyle = "#00e5ff";
-        ctx.fillText(`FIREWALL: ${Math.round(p2FwRatio * 100)}%`, w - 40, 88);
-
-        // RAGE Indicator
-        if (this.p1.inRage) {
-            ctx.fillStyle = "#ff1744";
-            ctx.font = "bold 16px 'Orbitron', monospace";
-            ctx.textAlign = "left";
-            ctx.fillText("⚡ RAGE ART READY [SPACE]", 40, 110);
+        // Rage Art Super Ready Notification
+        if (f.inRage) {
+            ctx.fillStyle = (this.frame % 20 < 10) ? "#ee1515" : "#ffea00";
+            ctx.font = "bold 11px 'Orbitron', monospace";
+            ctx.textAlign = isP2 ? "right" : "left";
+            const rageText = isP2 ? "⚡ RAGE ART READY [ENTER]" : "⚡ RAGE ART READY [SPACE]";
+            ctx.fillText(rageText, isP2 ? x + width - 14 : x + 14, y + 106);
         }
-        if (this.p2.inRage) {
-            ctx.fillStyle = "#ff1744";
-            ctx.font = "bold 16px 'Orbitron', monospace";
-            ctx.textAlign = "right";
-            ctx.fillText(this.mode === 'pvp_local' ? "[ENTER] RAGE ART READY ⚡" : "RAGE ART READY ⚡", w - 40, 110);
-        }
+        ctx.restore();
+    }
 
+    renderControlsBar(ctx, w, h) {
+        ctx.save();
+        const barH = 28;
+        const barY = h - barH;
+        ctx.fillStyle = "rgba(8, 16, 32, 0.88)";
+        ctx.fillRect(0, barY, w, barH);
+        ctx.strokeStyle = "rgba(255, 203, 5, 0.4)";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(0, barY);
+        ctx.lineTo(w, barY);
+        ctx.stroke();
+
+        ctx.font = "bold 11px 'Orbitron', monospace, sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillStyle = "#ffcb05";
+
+        if (this.mode === 'pvp_local') {
+            ctx.fillText("P1: [J] Light  [K] Launch  [L] Special  [SPACE] Super  |  P2: [1/B] Light  [2/N] Launch  [3/M] Special  [ENTER] Super", w / 2, barY + 18);
+        } else {
+            ctx.fillText("CONTROLS:  [J] Light Attack / Combo   [K] Heavy / Launcher   [L] Special Move   [SPACE] Super Move (Rage Art)", w / 2, barY + 18);
+        }
         ctx.restore();
     }
 

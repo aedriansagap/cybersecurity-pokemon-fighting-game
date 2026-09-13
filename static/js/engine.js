@@ -74,6 +74,22 @@ class Fighter {
         this.spriteBackImg = new Image();
         this.spriteBackImg.src = this.charData.spriteBack;
 
+        // Mega Evolution & Super Form Sprites
+        this.megaFrontImg = new Image();
+        this.megaFrontImg.src = this.charData.megaSpriteFront || this.charData.spriteFront;
+        this.megaBackImg = new Image();
+        this.megaBackImg.src = this.charData.megaSpriteBack || this.charData.spriteBack;
+        this.isTransformed = false;
+        this.transformTimer = 0;
+        this.hitFlashFrames = 0;
+
+        // Procedural Animation Offsets
+        this.animOffsetX = 0;
+        this.animOffsetY = 0;
+        this.animScaleX = 1.0;
+        this.animScaleY = 1.0;
+        this.animTilt = 0;
+
         // Projectiles
         this.projectiles = [];
 
@@ -92,6 +108,17 @@ class Fighter {
 
     update() {
         this.stateTime++;
+
+        // Update Transform status
+        if (this.transformTimer > 0) {
+            this.transformTimer--;
+            if (this.transformTimer <= 0) {
+                this.isTransformed = false;
+            }
+        }
+        if (this.hitFlashFrames > 0) {
+            this.hitFlashFrames--;
+        }
 
         // Update Rage status (HP < 35%)
         this.inRage = (this.hp / this.maxHp) <= 0.35;
@@ -361,7 +388,15 @@ class Fighter {
             this.x += this.facing * move.dashImpulse;
         }
 
-        if (window.soundEngine) window.soundEngine.playWhoosh();
+        if (window.soundEngine) {
+            if (move.sound === "light") {
+                window.soundEngine.playSlash();
+            } else if (move.isLauncher) {
+                window.soundEngine.playEarthShatter();
+            } else {
+                window.soundEngine.playWhoosh();
+            }
+        }
     }
 
     // Zero-Day Rage Art Ultimate (Available at HP < 35%)
@@ -386,10 +421,15 @@ class Fighter {
         this.moveFrame = 0;
         this.hasHitThisMove = false;
 
+        // Activate Mega Evolution Transform!
+        this.isTransformed = true;
+        this.transformTimer = 160;
+
         // Cinematic freeze & announcer
         if (window.gameEngine) {
-            window.gameEngine.triggerSuperFreeze(60, this);
+            window.gameEngine.triggerSuperFreeze(70, this);
             if (window.soundEngine) {
+                window.soundEngine.playMegaEvolve();
                 window.soundEngine.playCry(this.charData.id, 1.0);
                 window.soundEngine.announce(this.charData.rageArtName || "ZERO DAY EXPLOIT!");
             }
@@ -401,26 +441,68 @@ class Fighter {
         const m = this.currentMove;
         if (!m) {
             this.state = "idle";
+            this.resetAnimOffsets();
             return;
         }
 
-        // Active Hitbox Frames
-        if (this.moveFrame >= m.startup && this.moveFrame < m.startup + m.active) {
+        // Procedural Animation Offsets based on attack phase
+        if (this.moveFrame < m.startup) {
+            // 1. Wind-up phase: pull back, slight crouch, tilt back
+            const progress = this.moveFrame / m.startup;
+            this.animOffsetX = -this.facing * (m.lungeX || 12) * progress * 0.45;
+            this.animOffsetY = 2 * progress;
+            this.animScaleX = 0.95;
+            this.animScaleY = 0.95;
+            this.animTilt = -(m.tilt || 8) * progress * 0.5;
+        } else if (this.moveFrame < m.startup + m.active) {
+            // 2. Active Strike phase: forward lunge, dynamic stretch/squash, strike tilt!
+            this.animOffsetX = this.facing * (m.lungeX || 16);
+            this.animOffsetY = m.squashY ? (1 - m.squashY) * 15 : 0;
+            this.animScaleX = m.stretchX || 1.18;
+            this.animScaleY = m.squashY || 0.88;
+            this.animTilt = (m.tilt || 14);
+
             if (!this.hasHitThisMove) {
                 if (m.projectile) {
                     this.spawnProjectile(m);
                     this.hasHitThisMove = true;
                 } else {
+                    // Spawn visual attack effect on strike frame
+                    if (window.gameEngine) {
+                        const vfxType = m.vfx || "slash1";
+                        const targetX = this.x + this.facing * (m.range * 0.8);
+                        const targetY = this.y - 65;
+                        window.gameEngine.spawnAttackVFX(vfxType, targetX, targetY, this.facing, this.charData);
+                    }
                     this.checkHitboxCollision(m);
                 }
             }
+        } else {
+            // 3. Recovery phase: smooth decay back to neutral stance
+            const recTotal = Math.max(1, m.recovery);
+            const recProgress = (this.moveFrame - m.startup - m.active) / recTotal;
+            const remaining = Math.max(0, 1.0 - recProgress);
+            this.animOffsetX *= remaining;
+            this.animOffsetY *= remaining;
+            this.animScaleX = 1.0 + (this.animScaleX - 1.0) * remaining;
+            this.animScaleY = 1.0 + (this.animScaleY - 1.0) * remaining;
+            this.animTilt *= remaining;
         }
 
         // Recovery finished
         if (this.moveFrame >= m.startup + m.active + m.recovery) {
             this.state = "idle";
             this.currentMove = null;
+            this.resetAnimOffsets();
         }
+    }
+
+    resetAnimOffsets() {
+        this.animOffsetX = 0;
+        this.animOffsetY = 0;
+        this.animScaleX = 1.0;
+        this.animScaleY = 1.0;
+        this.animTilt = 0;
     }
 
     spawnProjectile(move) {
@@ -529,6 +611,12 @@ class Fighter {
         let damage = rawDamage / this.buffs.defenseUp;
         if (isCounterHit) damage *= 1.25;
 
+        // White-out hit flash and hit-stop
+        this.hitFlashFrames = isCounterHit ? 8 : 5;
+        if (window.gameEngine) {
+            window.gameEngine.triggerHitStop(isLauncher ? 6 : (isCounterHit ? 5 : 3));
+        }
+
         // Juggle Damage Scaling
         if (this.isJuggled) {
             damage *= Math.max(0.4, 1.0 - this.juggleHits * 0.15);
@@ -605,9 +693,11 @@ class GameEngine {
         this.shakeDuration = 0;
         this.slowMoFrames = 0;
 
-        // Visual effects
+        // Visual effects & Attack Animations
         this.sparks = [];
         this.shields = [];
+        this.attackVFX = [];
+        this.hitStopFrames = 0;
         this.bannerText = "";
         this.bannerColor = "#00e5ff";
         this.bannerTime = 0;
@@ -885,8 +975,171 @@ class GameEngine {
         });
     }
 
+    triggerHitStop(frames = 3) {
+        this.hitStopFrames = frames;
+    }
+
+    spawnAttackVFX(type, x, y, facing, charData) {
+        this.attackVFX.push({
+            type: type,
+            x: x,
+            y: y,
+            facing: facing,
+            color: charData.color || "#00e5ff",
+            secondaryColor: (charData.themeColors && charData.themeColors.secondary) || "#ffcb05",
+            charId: charData.id,
+            life: 14,
+            maxLife: 14
+        });
+    }
+
+    renderAttackVFX(ctx) {
+        for (const fx of this.attackVFX) {
+            ctx.save();
+            const progress = fx.life / fx.maxLife; // 1 -> 0
+            const alpha = Math.max(0, progress);
+
+            ctx.translate(fx.x, fx.y);
+            ctx.scale(fx.facing, 1);
+
+            if (fx.type === "slash1" || fx.type === "slash") {
+                // Curved energy slash arc (Light jab 1)
+                ctx.save();
+                ctx.shadowColor = fx.color;
+                ctx.shadowBlur = 18;
+                ctx.strokeStyle = fx.color;
+                ctx.lineWidth = 4 * alpha + 1;
+                ctx.beginPath();
+                ctx.arc(0, 0, 42 * (1.2 - progress * 0.2), -Math.PI * 0.45, Math.PI * 0.45, false);
+                ctx.stroke();
+
+                // Inner white-hot blade
+                ctx.strokeStyle = "#ffffff";
+                ctx.lineWidth = 2 * alpha;
+                ctx.beginPath();
+                ctx.arc(0, 0, 42 * (1.2 - progress * 0.2), -Math.PI * 0.35, Math.PI * 0.35, false);
+                ctx.stroke();
+                ctx.restore();
+            } else if (fx.type === "slash2" || fx.type === "cross_slash") {
+                // Dual intersecting cross-slash blades (Light jab 2)
+                ctx.save();
+                ctx.shadowColor = fx.secondaryColor;
+                ctx.shadowBlur = 20;
+                ctx.strokeStyle = fx.secondaryColor;
+                ctx.lineWidth = 5 * alpha;
+                const len = 48 * (1.3 - progress * 0.3);
+
+                ctx.beginPath();
+                ctx.moveTo(-len * 0.7, -len * 0.7);
+                ctx.lineTo(len * 0.7, len * 0.7);
+                ctx.moveTo(-len * 0.7, len * 0.7);
+                ctx.lineTo(len * 0.7, -len * 0.7);
+                ctx.stroke();
+
+                ctx.strokeStyle = "#ffffff";
+                ctx.lineWidth = 2 * alpha;
+                ctx.stroke();
+                ctx.restore();
+            } else if (fx.type === "low_arc") {
+                // Low sweep dust & spark shockwave
+                ctx.save();
+                ctx.shadowColor = fx.color;
+                ctx.shadowBlur = 15;
+                ctx.strokeStyle = fx.color;
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.ellipse(0, 50, 60 * (1.3 - progress * 0.3), 12, 0, 0, Math.PI);
+                ctx.stroke();
+                ctx.restore();
+            } else if (fx.type === "crescent_arc") {
+                // Heavy spinning crescent roundhouse blade
+                ctx.save();
+                ctx.shadowColor = fx.color;
+                ctx.shadowBlur = 25;
+                ctx.strokeStyle = fx.color;
+                ctx.lineWidth = 6 * alpha;
+                ctx.beginPath();
+                ctx.arc(0, -10, 65 * (1.2 - progress * 0.2), -Math.PI * 0.6, Math.PI * 0.6);
+                ctx.stroke();
+
+                ctx.strokeStyle = "#ffffff";
+                ctx.lineWidth = 2.5 * alpha;
+                ctx.stroke();
+                ctx.restore();
+            } else if (fx.type === "rising_geyser") {
+                // Volcanic / Electric / Aura rising geyser column (Heavy Launcher)
+                ctx.save();
+                ctx.shadowColor = fx.color;
+                ctx.shadowBlur = 25;
+                const geyserHeight = 140 * (1 - progress * 0.1);
+
+                // Ground fracture fissure
+                ctx.fillStyle = fx.secondaryColor;
+                ctx.fillRect(-35, 55, 70, 8 * alpha);
+
+                // Rising energy columns
+                const grad = ctx.createLinearGradient(0, 60, 0, 60 - geyserHeight);
+                grad.addColorStop(0, fx.secondaryColor);
+                grad.addColorStop(0.5, fx.color);
+                grad.addColorStop(1, "rgba(255, 255, 255, 0)");
+                ctx.fillStyle = grad;
+
+                ctx.beginPath();
+                ctx.moveTo(-25, 60);
+                ctx.lineTo(-8, 60 - geyserHeight);
+                ctx.lineTo(8, 60 - geyserHeight);
+                ctx.lineTo(25, 60);
+                ctx.fill();
+
+                // Core electric laser beam
+                ctx.fillStyle = "#ffffff";
+                ctx.fillRect(-5, 60 - geyserHeight * 0.9, 10, geyserHeight * 0.9);
+                ctx.restore();
+            } else if (fx.type === "heavy_burst") {
+                // Forward dash attack shockwave ring
+                ctx.save();
+                ctx.shadowColor = fx.color;
+                ctx.shadowBlur = 22;
+                ctx.strokeStyle = fx.color;
+                ctx.lineWidth = 4 * alpha;
+                ctx.beginPath();
+                ctx.ellipse(0, 0, 45 * (1.4 - progress * 0.4), 30, 0, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.restore();
+            } else if (fx.type === "super_flurry") {
+                // Zero-Day Rage Art Anime Slash Flurry Lines
+                ctx.save();
+                ctx.shadowColor = "#ff1744";
+                ctx.shadowBlur = 30;
+                ctx.strokeStyle = "#ff1744";
+                ctx.lineWidth = 4;
+                for (let l = 0; l < 4; l++) {
+                    const ang = (l * Math.PI / 4) + progress * 2;
+                    ctx.beginPath();
+                    ctx.moveTo(-120 * Math.cos(ang), -120 * Math.sin(ang));
+                    ctx.lineTo(120 * Math.cos(ang), 120 * Math.sin(ang));
+                    ctx.stroke();
+                }
+                ctx.strokeStyle = "#ffffff";
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                ctx.restore();
+            }
+
+            ctx.restore();
+        }
+    }
+
     gameLoop() {
         if (!this.running) return;
+
+        // Hit-stop impact freeze (gives heavy Tekken combat crunch)
+        if (this.hitStopFrames > 0) {
+            this.hitStopFrames--;
+            this.render();
+            requestAnimationFrame(() => this.gameLoop());
+            return;
+        }
 
         // Slow-mo freeze processing
         if (this.slowMoFrames > 0) {
@@ -942,6 +1195,12 @@ class GameEngine {
             sh.radius += 1.5;
             sh.life--;
             if (sh.life <= 0) this.shields.splice(i, 1);
+        }
+
+        for (let i = this.attackVFX.length - 1; i >= 0; i--) {
+            const fx = this.attackVFX[i];
+            fx.life--;
+            if (fx.life <= 0) this.attackVFX.splice(i, 1);
         }
 
         if (this.bannerTime > 0) this.bannerTime--;
@@ -1009,6 +1268,9 @@ class GameEngine {
             ctx.stroke();
             ctx.restore();
         }
+
+        // 7. Draw Dynamic Attack Animations & VFX
+        this.renderAttackVFX(ctx);
 
         ctx.restore();
 
@@ -1196,15 +1458,38 @@ class GameEngine {
     renderFighter(ctx, f) {
         ctx.save();
 
-        // 2.5D Sidestep perspective scaling
+        // 2.5D Sidestep perspective scaling & Procedural Attack Transforms
         const depthScale = 1.0 + f.z * 0.12;
-        const renderY = f.y + f.z * 15;
+        const renderX = f.x + (f.animOffsetX || 0);
+        const renderY = f.y + f.z * 15 + (f.animOffsetY || 0);
 
-        ctx.translate(f.x, renderY);
-        ctx.scale(f.facing * depthScale, depthScale);
+        ctx.translate(renderX, renderY);
+        ctx.scale(f.facing * depthScale * (f.animScaleX || 1.0), depthScale * (f.animScaleY || 1.0));
 
-        // Rage Art Cyber Aura Glow
-        if (f.inRage) {
+        // Procedural Strike & Flinch Tilt
+        let tilt = f.animTilt || 0;
+        if (f.state === "hitstun") {
+            tilt = -14 + Math.sin(f.stateTime * 1.5) * 4;
+        } else if (f.state === "crouch") {
+            tilt = 6;
+        }
+        if (tilt !== 0) {
+            ctx.rotate((tilt * Math.PI) / 180);
+        }
+
+        // Mega Evolution Divine Aura
+        if (f.isTransformed) {
+            ctx.save();
+            ctx.shadowColor = f.charData.color || "#00e5ff";
+            ctx.shadowBlur = 35 + Math.sin(this.frame * 0.25) * 15;
+            ctx.strokeStyle = "rgba(255, 255, 255, 0.85)";
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.ellipse(0, -f.charData.height * 0.52, f.charData.width * 0.7, f.charData.height * 0.65, 0, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.restore();
+        } else if (f.inRage) {
+            // Rage Art Cyber Aura Glow
             ctx.save();
             ctx.shadowColor = "#ff1744";
             ctx.shadowBlur = 25 + Math.sin(this.frame * 0.2) * 15;
@@ -1214,9 +1499,20 @@ class GameEngine {
             ctx.restore();
         }
 
-        // Draw Official Pokémon Animated Sprite
-        const sprite = (f.facing === 1) ? f.spriteFrontImg : f.spriteBackImg;
-        if (sprite.complete && sprite.naturalWidth > 0) {
+        // White-out Hit Flash on Clean Impact
+        if (f.hitFlashFrames > 0) {
+            ctx.filter = "brightness(3.5) contrast(2)";
+        }
+
+        // Select Active Sprite (Mega Form vs Standard Form)
+        let sprite;
+        if (f.isTransformed) {
+            sprite = (f.facing === 1) ? f.megaFrontImg : f.megaBackImg;
+        } else {
+            sprite = (f.facing === 1) ? f.spriteFrontImg : f.spriteBackImg;
+        }
+
+        if (sprite && sprite.complete && sprite.naturalWidth > 0) {
             const aspect = sprite.naturalWidth / sprite.naturalHeight;
             const drawH = f.charData.height * 1.15;
             const drawW = drawH * aspect;
@@ -1227,31 +1523,131 @@ class GameEngine {
             ctx.fillRect(-f.charData.width / 2, -f.charData.height, f.charData.width, f.charData.height);
         }
 
-        // Attack Spark Trails
-        if (f.state === "attack" && f.currentMove) {
-            ctx.strokeStyle = f.charData.color || "#00e5ff";
-            ctx.lineWidth = 3;
-            ctx.strokeRect(f.currentMove.hitbox.x, f.currentMove.hitbox.y, f.currentMove.hitbox.w, f.currentMove.hitbox.h);
-        }
-
         ctx.restore();
     }
 
     renderProjectiles(ctx, f) {
         for (const p of f.projectiles) {
             ctx.save();
-            ctx.fillStyle = p.color;
-            ctx.shadowColor = p.color;
-            ctx.shadowBlur = 15;
-            ctx.beginPath();
-            ctx.arc(p.x, p.y, 16, 0, Math.PI * 2);
-            ctx.fill();
+            const id = f.charData.id;
 
-            // Energy core
-            ctx.fillStyle = "#ffffff";
-            ctx.beginPath();
-            ctx.arc(p.x, p.y, 8, 0, Math.PI * 2);
-            ctx.fill();
+            if (id === "lucario") {
+                // Aura Sphere: Glowing blue sphere with dual rotating orbital rings
+                ctx.fillStyle = "#00e5ff";
+                ctx.shadowColor = "#00e5ff";
+                ctx.shadowBlur = 22;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 20, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = "#ffffff";
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 10, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.strokeStyle = "rgba(41, 182, 246, 0.85)";
+                ctx.lineWidth = 3;
+                ctx.save();
+                ctx.translate(p.x, p.y);
+                ctx.rotate(this.frame * 0.15);
+                ctx.beginPath();
+                ctx.ellipse(0, 0, 28, 10, 0, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.rotate(Math.PI / 2);
+                ctx.beginPath();
+                ctx.ellipse(0, 0, 28, 10, 0, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.restore();
+            } else if (id === "gengar") {
+                // Shadow Ball: Pulsing purple void with ghost souls
+                ctx.fillStyle = "#735797";
+                ctx.shadowColor = "#ab47bc";
+                ctx.shadowBlur = 24;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 22, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = "#110520";
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 12, 0, Math.PI * 2);
+                ctx.fill();
+
+                for (let a = 0; a < 3; a++) {
+                    const ang = this.frame * 0.12 + (a * Math.PI * 2 / 3);
+                    const wx = p.x + Math.cos(ang) * 26;
+                    const wy = p.y + Math.sin(ang) * 26;
+                    ctx.fillStyle = "#e040fb";
+                    ctx.beginPath();
+                    ctx.arc(wx, wy, 5, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            } else if (id === "pikachu") {
+                // Thunderbolt: Jagged multi-point electric bolt
+                ctx.strokeStyle = "#ffea00";
+                ctx.shadowColor = "#ffea00";
+                ctx.shadowBlur = 20;
+                ctx.lineWidth = 4;
+                ctx.beginPath();
+                ctx.moveTo(p.x - p.vx * 2.5, p.y);
+                ctx.lineTo(p.x - p.vx * 1.2, p.y - 14);
+                ctx.lineTo(p.x, p.y + 14);
+                ctx.lineTo(p.x + p.vx * 1.2, p.y);
+                ctx.stroke();
+
+                ctx.fillStyle = "#ffffff";
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 9, 0, Math.PI * 2);
+                ctx.fill();
+            } else if (id === "greninja") {
+                // Water Shuriken: Rapid 360° spinning 4-point ninja star
+                ctx.save();
+                ctx.translate(p.x, p.y);
+                ctx.rotate(this.frame * 0.3);
+                ctx.fillStyle = "rgba(99, 144, 240, 0.92)";
+                ctx.shadowColor = "#00e5ff";
+                ctx.shadowBlur = 18;
+                ctx.beginPath();
+                for (let i = 0; i < 4; i++) {
+                    ctx.rotate(Math.PI / 2);
+                    ctx.lineTo(0, -25);
+                    ctx.lineTo(8, -8);
+                }
+                ctx.closePath();
+                ctx.fill();
+
+                ctx.fillStyle = "#ffffff";
+                ctx.beginPath();
+                ctx.arc(0, 0, 6, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            } else if (id === "porygonz") {
+                // Tri-Attack: RGB 3-color laser beam with binary 0/1 particles
+                const colors = ["#ff1744", "#00e5ff", "#ffea00"];
+                colors.forEach((col, idx) => {
+                    ctx.fillStyle = col;
+                    ctx.shadowColor = col;
+                    ctx.shadowBlur = 12;
+                    ctx.beginPath();
+                    ctx.arc(p.x - idx * 10 * Math.sign(p.vx), p.y + (idx - 1) * 8, 8, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+                ctx.font = "bold 12px monospace";
+                ctx.fillStyle = "#00e676";
+                ctx.fillText(this.frame % 2 === 0 ? "1" : "0", p.x - p.vx * 2, p.y - 14);
+            } else {
+                // Default / Scizor / Blaziken / Mewtwo
+                ctx.fillStyle = p.color;
+                ctx.shadowColor = p.color;
+                ctx.shadowBlur = 16;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 18, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = "#ffffff";
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 8, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
             ctx.restore();
         }
     }

@@ -40,6 +40,8 @@ const CHARACTERS = {
         height: 125,
         spriteFront: "/static/assets/sprites/lucario_front.gif",
         spriteBack: "/static/assets/sprites/lucario_back.gif",
+        megaSpriteFront: "/static/assets/sprites/lucario_mega_front.gif",
+        megaSpriteBack: "/static/assets/sprites/lucario_mega_back.gif",
         icon: "/static/assets/sprites/lucario_icon.png",
         rageArtName: "Quantum Aura Burst",
         rageArtDesc: "Mishima-style electric surge that detonates corrupted packet buffers.",
@@ -57,7 +59,7 @@ const CHARACTERS = {
                 onHit: 5,
                 range: 75,
                 hitbox: { x: 45, y: -70, w: 45, h: 30 },
-                sound: "light"
+                sound: "light", vfx: "slash1", animType: "jab", lungeX: 10, tilt: 6
             },
             // 2: Right Punch (Straight Mid)
             "2": {
@@ -72,7 +74,7 @@ const CHARACTERS = {
                 onHit: 7,
                 range: 90,
                 hitbox: { x: 50, y: -65, w: 50, h: 35 },
-                sound: "mid"
+                sound: "mid", vfx: "slash2", animType: "cross", lungeX: 15, tilt: 10
             },
             // 3: Left Kick (Low Sweep)
             "3": {
@@ -87,7 +89,7 @@ const CHARACTERS = {
                 onHit: 4,
                 range: 85,
                 hitbox: { x: 45, y: -25, w: 55, h: 25 },
-                sound: "mid"
+                sound: "mid", vfx: "low_arc", animType: "sweep", squashY: 0.8, tilt: -12, lungeX: 12, tilt: 10
             },
             // 4: Right Kick (High Roundhouse)
             "4": {
@@ -102,7 +104,7 @@ const CHARACTERS = {
                 onHit: 12,
                 range: 95,
                 hitbox: { x: 55, y: -85, w: 55, h: 40 },
-                sound: "heavy"
+                sound: "heavy", vfx: "crescent_arc", animType: "kick", lungeX: 18, stretchX: 1.2, tilt: 18
             },
             // df+2: Classic Tekken Electric Uppercut Launcher
             "df2": {
@@ -120,7 +122,7 @@ const CHARACTERS = {
                 launchForceX: 4.5,
                 range: 80,
                 hitbox: { x: 45, y: -90, w: 55, h: 65 },
-                sound: "launch"
+                sound: "launch", vfx: "rising_geyser", animType: "launcher", lungeX: 14, stretchY: 1.3, tilt: -15
             },
             // f,f+2: Dashing Palm Strike
             "ff2": {
@@ -136,7 +138,7 @@ const CHARACTERS = {
                 dashImpulse: 12,
                 range: 110,
                 hitbox: { x: 60, y: -65, w: 60, h: 45 },
-                sound: "heavy"
+                sound: "heavy", vfx: "heavy_burst", animType: "dash_attack", lungeX: 25, stretchX: 1.25, tilt: 18
             },
             // Special: Aura Sphere Blast
             "special": {
@@ -153,7 +155,7 @@ const CHARACTERS = {
                 speed: 16,
                 range: 250,
                 hitbox: { x: 65, y: -60, w: 50, h: 50 },
-                sound: "heavy"
+                sound: "heavy", vfx: "projectile", animType: "special", lungeX: 15, tilt: 10
             }
         },
         combos: [
@@ -183,6 +185,8 @@ const CHARACTERS = {
         height: 120,
         spriteFront: "/static/assets/sprites/gengar_front.gif",
         spriteBack: "/static/assets/sprites/gengar_back.gif",
+        megaSpriteFront: "/static/assets/sprites/gengar_mega_front.gif",
+        megaSpriteBack: "/static/assets/sprites/gengar_mega_back.gif",
         icon: "/static/assets/sprites/gengar_icon.png",
         rageArtName: "Zero-Day Exploit Overwrite",
         rageArtDesc: "Infiltrates host kernel space and executes destructive ransomware encryption.",
@@ -199,7 +203,7 @@ const CHARACTERS = {
                 onHit: 6,
                 range: 70,
                 hitbox: { x: 40, y: -65, w: 45, h: 30 },
-                sound: "light"
+                sound: "light", vfx: "slash1", animType: "jab", lungeX: 10, tilt: 6
             },
             "2": {
                 name: "Hex Claw",
@@ -213,7 +217,7 @@ const CHARACTERS = {
                 onHit: 8,
                 range: 85,
                 hitbox: { x: 45, y: -60, w: 50, h: 35 },
-                sound: "mid"
+                sound: "mid", vfx: "slash2", animType: "cross", lungeX: 15, tilt: 10
             },
             "3": {
                 name: "Ransomware Trip",
@@ -227,7 +231,7 @@ const CHARACTERS = {
                 onHit: 5,
                 range: 90,
                 hitbox: { x: 45, y: -20, w: 60, h: 25 },
-                sound: "mid"
+                sound: "mid", vfx: "low_arc", animType: "sweep", squashY: 0.8, tilt: -12, lungeX: 12, tilt: 10
             },
             "4": {
                 name: "Spook Launch Kick",
@@ -241,7 +245,7 @@ const CHARACTERS = {
                 onHit: 12,
                 range: 90,
                 hitbox: { x: 50, y: -80, w: 50, h: 40 },
-                sound: "heavy"
+                sound: "heavy", vfx: "crescent_arc", animType: "kick", lungeX: 18, stretchX: 1.2, tilt: 18
             },
             "df2": {
                 name: "Phantom Port Probe",
@@ -258,7 +262,7 @@ const CHARACTERS = {
                 launchForceX: 4.0,
                 range: 85,
                 hitbox: { x: 45, y: -85, w: 55, h: 60 },
-                sound: "launch"
+                sound: "launch", vfx: "rising_geyser", animType: "launcher", lungeX: 14, stretchY: 1.3, tilt: -15
             },
             "ff2": {
                 name: "Social Engineering Lunge",
@@ -273,7 +277,7 @@ const CHARACTERS = {
                 dashImpulse: 13,
                 range: 115,
                 hitbox: { x: 60, y: -60, w: 60, h: 40 },
-                sound: "heavy"
+                sound: "heavy", vfx: "heavy_burst", animType: "dash_attack", lungeX: 25, stretchX: 1.25, tilt: 18
             },
             "special": {
                 name: "Phish Warp & Shadow Ball",
@@ -289,7 +293,7 @@ const CHARACTERS = {
                 speed: 15,
                 range: 240,
                 hitbox: { x: 60, y: -55, w: 45, h: 45 },
-                sound: "heavy"
+                sound: "heavy", vfx: "projectile", animType: "special", lungeX: 15, tilt: 10
             }
         },
         combos: [
@@ -319,6 +323,8 @@ const CHARACTERS = {
         height: 115,
         spriteFront: "/static/assets/sprites/porygonz_front.gif",
         spriteBack: "/static/assets/sprites/porygonz_back.gif",
+        megaSpriteFront: "/static/assets/sprites/porygonz_mega_front.gif",
+        megaSpriteBack: "/static/assets/sprites/porygonz_mega_back.gif",
         icon: "/static/assets/sprites/porygonz_icon.png",
         rageArtName: "Kernel Panic Blue Screen",
         rageArtDesc: "Causes widespread memory dump corruption and critical BSOD halt.",
@@ -335,7 +341,7 @@ const CHARACTERS = {
                 onHit: 4,
                 range: 85,
                 hitbox: { x: 50, y: -65, w: 50, h: 25 },
-                sound: "light"
+                sound: "light", vfx: "slash1", animType: "jab", lungeX: 10, tilt: 6
             },
             "2": {
                 name: "Hex Bit Punch",
@@ -349,7 +355,7 @@ const CHARACTERS = {
                 onHit: 7,
                 range: 95,
                 hitbox: { x: 55, y: -60, w: 55, h: 30 },
-                sound: "mid"
+                sound: "mid", vfx: "slash2", animType: "cross", lungeX: 15, tilt: 10
             },
             "3": {
                 name: "Buffer Overflow Slide",
@@ -363,7 +369,7 @@ const CHARACTERS = {
                 onHit: 5,
                 range: 100,
                 hitbox: { x: 50, y: -20, w: 65, h: 25 },
-                sound: "mid"
+                sound: "mid", vfx: "low_arc", animType: "sweep", squashY: 0.8, tilt: -12, lungeX: 12, tilt: 10
             },
             "4": {
                 name: "Null Pointer Kick",
@@ -377,7 +383,7 @@ const CHARACTERS = {
                 onHit: 14,
                 range: 105,
                 hitbox: { x: 60, y: -75, w: 55, h: 35 },
-                sound: "heavy"
+                sound: "heavy", vfx: "crescent_arc", animType: "kick", lungeX: 18, stretchX: 1.2, tilt: 18
             },
             "df2": {
                 name: "Stack Corruption Launch",
@@ -394,7 +400,7 @@ const CHARACTERS = {
                 launchForceX: 4.8,
                 range: 90,
                 hitbox: { x: 50, y: -80, w: 55, h: 60 },
-                sound: "launch"
+                sound: "launch", vfx: "rising_geyser", animType: "launcher", lungeX: 14, stretchY: 1.3, tilt: -15
             },
             "ff2": {
                 name: "DDoS Ray Spike",
@@ -409,7 +415,7 @@ const CHARACTERS = {
                 dashImpulse: 12,
                 range: 125,
                 hitbox: { x: 65, y: -60, w: 70, h: 35 },
-                sound: "heavy"
+                sound: "heavy", vfx: "heavy_burst", animType: "dash_attack", lungeX: 25, stretchX: 1.25, tilt: 18
             },
             "special": {
                 name: "Tri-Attack Binary Blast",
@@ -425,7 +431,7 @@ const CHARACTERS = {
                 speed: 18,
                 range: 300,
                 hitbox: { x: 65, y: -55, w: 55, h: 55 },
-                sound: "heavy"
+                sound: "heavy", vfx: "projectile", animType: "special", lungeX: 15, tilt: 10
             }
         },
         combos: [
@@ -455,6 +461,8 @@ const CHARACTERS = {
         height: 135,
         spriteFront: "/static/assets/sprites/scizor_front.gif",
         spriteBack: "/static/assets/sprites/scizor_back.gif",
+        megaSpriteFront: "/static/assets/sprites/scizor_mega_front.gif",
+        megaSpriteBack: "/static/assets/sprites/scizor_mega_back.gif",
         icon: "/static/assets/sprites/scizor_icon.png",
         rageArtName: "Brute Force Decryption Crush",
         rageArtDesc: "Heavy hydraulic pincer clamp that crunches through 4096-bit RSA keys.",
@@ -471,7 +479,7 @@ const CHARACTERS = {
                 onHit: 6,
                 range: 80,
                 hitbox: { x: 50, y: -75, w: 45, h: 35 },
-                sound: "light"
+                sound: "light", vfx: "slash1", animType: "jab", lungeX: 10, tilt: 6
             },
             "2": {
                 name: "Iron Clamp Straight",
@@ -485,7 +493,7 @@ const CHARACTERS = {
                 onHit: 9,
                 range: 95,
                 hitbox: { x: 55, y: -70, w: 55, h: 40 },
-                sound: "mid"
+                sound: "mid", vfx: "slash2", animType: "cross", lungeX: 15, tilt: 10
             },
             "3": {
                 name: "Steel Shin Kick",
@@ -499,7 +507,7 @@ const CHARACTERS = {
                 onHit: 4,
                 range: 90,
                 hitbox: { x: 50, y: -25, w: 55, h: 25 },
-                sound: "mid"
+                sound: "mid", vfx: "low_arc", animType: "sweep", squashY: 0.8, tilt: -12, lungeX: 12, tilt: 10
             },
             "4": {
                 name: "Hydraulic Axe Kick",
@@ -513,7 +521,7 @@ const CHARACTERS = {
                 onHit: 14,
                 range: 95,
                 hitbox: { x: 55, y: -90, w: 55, h: 45 },
-                sound: "heavy"
+                sound: "heavy", vfx: "crescent_arc", animType: "kick", lungeX: 18, stretchX: 1.2, tilt: 18
             },
             "df2": {
                 name: "Iron Defense Uppercut",
@@ -530,7 +538,7 @@ const CHARACTERS = {
                 launchForceX: 4.2,
                 range: 85,
                 hitbox: { x: 50, y: -95, w: 60, h: 70 },
-                sound: "launch"
+                sound: "launch", vfx: "rising_geyser", animType: "launcher", lungeX: 14, stretchY: 1.3, tilt: -15
             },
             "ff2": {
                 name: "Brute Force Ram",
@@ -545,7 +553,7 @@ const CHARACTERS = {
                 dashImpulse: 14,
                 range: 120,
                 hitbox: { x: 65, y: -70, w: 65, h: 50 },
-                sound: "heavy"
+                sound: "heavy", vfx: "heavy_burst", animType: "dash_attack", lungeX: 25, stretchX: 1.25, tilt: 18
             },
             "special": {
                 name: "Bullet Punch Overdrive",
@@ -559,7 +567,7 @@ const CHARACTERS = {
                 onHit: 20,
                 range: 110,
                 hitbox: { x: 60, y: -70, w: 70, h: 45 },
-                sound: "heavy"
+                sound: "heavy", vfx: "projectile", animType: "special", lungeX: 15, tilt: 10
             }
         },
         combos: [
@@ -589,6 +597,8 @@ const CHARACTERS = {
         height: 130,
         spriteFront: "/static/assets/sprites/blaziken_front.gif",
         spriteBack: "/static/assets/sprites/blaziken_back.gif",
+        megaSpriteFront: "/static/assets/sprites/blaziken_mega_front.gif",
+        megaSpriteBack: "/static/assets/sprites/blaziken_mega_back.gif",
         icon: "/static/assets/sprites/blaziken_icon.png",
         rageArtName: "Solar Thermal Breach",
         rageArtDesc: "Unleashes blazing multi-kick rush that incinerates server racks to molten slag.",
@@ -605,8 +615,9 @@ const CHARACTERS = {
                 onHit: 5,
                 range: 75,
                 hitbox: { x: 45, y: -70, w: 45, h: 30 },
-                sound: "light"
+                sound: "light", vfx: "slash1", animType: "jab", lungeX: 10, tilt: 6
             },
+            // 2: Right Punch (Straight Mid)
             "2": {
                 name: "Combustion Straight",
                 type: "mid",
@@ -619,8 +630,9 @@ const CHARACTERS = {
                 onHit: 7,
                 range: 90,
                 hitbox: { x: 50, y: -65, w: 50, h: 35 },
-                sound: "mid"
+                sound: "mid", vfx: "slash2", animType: "cross", lungeX: 15, tilt: 10
             },
+            // 3: Left Kick (Low Sweep)
             "3": {
                 name: "Low Flare Sweep",
                 type: "low",
@@ -633,8 +645,9 @@ const CHARACTERS = {
                 onHit: 4,
                 range: 90,
                 hitbox: { x: 45, y: -25, w: 60, h: 25 },
-                sound: "mid"
+                sound: "mid", vfx: "low_arc", animType: "sweep", squashY: 0.8, tilt: -12, lungeX: 12, tilt: 10
             },
+            // 4: Right Kick (High Roundhouse)
             "4": {
                 name: "Sky High Kick",
                 type: "high",
@@ -647,8 +660,9 @@ const CHARACTERS = {
                 onHit: 14,
                 range: 100,
                 hitbox: { x: 55, y: -90, w: 55, h: 45 },
-                sound: "heavy"
+                sound: "heavy", vfx: "crescent_arc", animType: "kick", lungeX: 18, stretchX: 1.2, tilt: 18
             },
+            // df+2: Classic Tekken Electric Uppercut Launcher
             "df2": {
                 name: "Brave Bird Uppercut",
                 type: "mid",
@@ -664,8 +678,9 @@ const CHARACTERS = {
                 launchForceX: 4.4,
                 range: 85,
                 hitbox: { x: 45, y: -90, w: 55, h: 65 },
-                sound: "launch"
+                sound: "launch", vfx: "rising_geyser", animType: "launcher", lungeX: 14, stretchY: 1.3, tilt: -15
             },
+            // f,f+2: Dashing Palm Strike
             "ff2": {
                 name: "Blaze Kick Dash",
                 type: "mid",
@@ -679,8 +694,9 @@ const CHARACTERS = {
                 dashImpulse: 13,
                 range: 120,
                 hitbox: { x: 60, y: -65, w: 65, h: 45 },
-                sound: "heavy"
+                sound: "heavy", vfx: "heavy_burst", animType: "dash_attack", lungeX: 25, stretchX: 1.25, tilt: 18
             },
+            // Special: Aura Sphere Blast
             "special": {
                 name: "Overheat Tornado Drive",
                 type: "mid",
@@ -693,7 +709,7 @@ const CHARACTERS = {
                 onHit: 19,
                 range: 110,
                 hitbox: { x: 55, y: -70, w: 65, h: 55 },
-                sound: "heavy"
+                sound: "heavy", vfx: "projectile", animType: "special", lungeX: 15, tilt: 10
             }
         },
         combos: [
@@ -723,6 +739,8 @@ const CHARACTERS = {
         height: 135,
         spriteFront: "/static/assets/sprites/mewtwo_front.gif",
         spriteBack: "/static/assets/sprites/mewtwo_back.gif",
+        megaSpriteFront: "/static/assets/sprites/mewtwo_mega_front.gif",
+        megaSpriteBack: "/static/assets/sprites/mewtwo_mega_back.gif",
         icon: "/static/assets/sprites/mewtwo_icon.png",
         rageArtName: "Total Privilege Escalation",
         rageArtDesc: "Assumes UID 0 superuser root access, overwriting all target system permissions.",
@@ -739,7 +757,7 @@ const CHARACTERS = {
                 onHit: 5,
                 range: 80,
                 hitbox: { x: 45, y: -75, w: 50, h: 30 },
-                sound: "light"
+                sound: "light", vfx: "slash1", animType: "jab", lungeX: 10, tilt: 6
             },
             "2": {
                 name: "Psystrike Palm",
@@ -753,7 +771,7 @@ const CHARACTERS = {
                 onHit: 8,
                 range: 95,
                 hitbox: { x: 50, y: -70, w: 55, h: 35 },
-                sound: "mid"
+                sound: "mid", vfx: "slash2", animType: "cross", lungeX: 15, tilt: 10
             },
             "3": {
                 name: "Gravity Low Sweep",
@@ -767,7 +785,7 @@ const CHARACTERS = {
                 onHit: 4,
                 range: 95,
                 hitbox: { x: 45, y: -25, w: 60, h: 25 },
-                sound: "mid"
+                sound: "mid", vfx: "low_arc", animType: "sweep", squashY: 0.8, tilt: -12, lungeX: 12, tilt: 10
             },
             "4": {
                 name: "Admin Sudo Kick",
@@ -781,7 +799,7 @@ const CHARACTERS = {
                 onHit: 13,
                 range: 100,
                 hitbox: { x: 55, y: -85, w: 55, h: 40 },
-                sound: "heavy"
+                sound: "heavy", vfx: "crescent_arc", animType: "kick", lungeX: 18, stretchX: 1.2, tilt: 18
             },
             "df2": {
                 name: "Telekinetic Lift Launcher",
@@ -798,7 +816,7 @@ const CHARACTERS = {
                 launchForceX: 4.2,
                 range: 90,
                 hitbox: { x: 50, y: -90, w: 60, h: 65 },
-                sound: "launch"
+                sound: "launch", vfx: "rising_geyser", animType: "launcher", lungeX: 14, stretchY: 1.3, tilt: -15
             },
             "ff2": {
                 name: "Root Command Thrust",
@@ -813,7 +831,7 @@ const CHARACTERS = {
                 dashImpulse: 13,
                 range: 120,
                 hitbox: { x: 60, y: -70, w: 65, h: 45 },
-                sound: "heavy"
+                sound: "heavy", vfx: "heavy_burst", animType: "dash_attack", lungeX: 25, stretchX: 1.25, tilt: 18
             },
             "special": {
                 name: "Shadow Ball Packet Blast",
@@ -829,7 +847,7 @@ const CHARACTERS = {
                 speed: 17,
                 range: 280,
                 hitbox: { x: 65, y: -65, w: 50, h: 50 },
-                sound: "heavy"
+                sound: "heavy", vfx: "projectile", animType: "special", lungeX: 15, tilt: 10
             }
         },
         combos: [
@@ -837,7 +855,8 @@ const CHARACTERS = {
             { sequence: ["df2", "2", "special"], name: "Root Escalation Juggle", damage: 222 },
             { sequence: ["3", "ff2", "special"], name: "Privilege Seizure Combo", damage: 206 }
         ]
-    },
+    }
+,
 
     pikachu: {
         id: "pikachu",
@@ -859,6 +878,8 @@ const CHARACTERS = {
         height: 100,
         spriteFront: "/static/assets/sprites/pikachu_front.gif",
         spriteBack: "/static/assets/sprites/pikachu_back.gif",
+        megaSpriteFront: "/static/assets/sprites/pikachu_mega_front.gif",
+        megaSpriteBack: "/static/assets/sprites/pikachu_mega_back.gif",
         icon: "/static/assets/sprites/pikachu_icon.png",
         rageArtName: "Grid Overload EMP",
         rageArtDesc: "Unleashes massive voltage spike that burns target input registers.",
@@ -875,7 +896,7 @@ const CHARACTERS = {
                 onHit: 6,
                 range: 70,
                 hitbox: { x: 40, y: -50, w: 45, h: 25 },
-                sound: "light"
+                sound: "light", vfx: "slash1", animType: "jab", lungeX: 10, tilt: 6
             },
             "2": {
                 name: "Thunder Palm",
@@ -889,7 +910,7 @@ const CHARACTERS = {
                 onHit: 7,
                 range: 80,
                 hitbox: { x: 45, y: -45, w: 50, h: 30 },
-                sound: "mid"
+                sound: "mid", vfx: "slash2", animType: "cross", lungeX: 15, tilt: 10
             },
             "3": {
                 name: "Low Tail Sweep",
@@ -903,7 +924,7 @@ const CHARACTERS = {
                 onHit: 4,
                 range: 75,
                 hitbox: { x: 40, y: -15, w: 50, h: 20 },
-                sound: "mid"
+                sound: "mid", vfx: "low_arc", animType: "sweep", squashY: 0.8, tilt: -12, lungeX: 12, tilt: 10
             },
             "4": {
                 name: "Iron Tail Whip",
@@ -917,7 +938,7 @@ const CHARACTERS = {
                 onHit: 11,
                 range: 90,
                 hitbox: { x: 50, y: -65, w: 55, h: 35 },
-                sound: "heavy"
+                sound: "heavy", vfx: "crescent_arc", animType: "kick", lungeX: 18, stretchX: 1.2, tilt: 18
             },
             "df2": {
                 name: "Volt Tackle Launcher",
@@ -934,7 +955,7 @@ const CHARACTERS = {
                 launchForceX: 4.0,
                 range: 85,
                 hitbox: { x: 45, y: -60, w: 55, h: 55 },
-                sound: "launch"
+                sound: "launch", vfx: "rising_geyser", animType: "launcher", lungeX: 14, stretchY: 1.3, tilt: -15
             },
             "ff2": {
                 name: "Quick Attack Rush",
@@ -949,7 +970,7 @@ const CHARACTERS = {
                 dashImpulse: 16,
                 range: 110,
                 hitbox: { x: 50, y: -45, w: 60, h: 35 },
-                sound: "heavy"
+                sound: "heavy", vfx: "heavy_burst", animType: "dash_attack", lungeX: 25, stretchX: 1.25, tilt: 18
             },
             "special": {
                 name: "Thunderbolt Beam",
@@ -965,7 +986,7 @@ const CHARACTERS = {
                 speed: 21,
                 range: 300,
                 hitbox: { x: 55, y: -45, w: 45, h: 45 },
-                sound: "heavy"
+                sound: "heavy", vfx: "projectile", animType: "special", lungeX: 15, tilt: 10
             }
         },
         combos: [
@@ -994,6 +1015,8 @@ const CHARACTERS = {
         height: 115,
         spriteFront: "/static/assets/sprites/greninja_front.gif",
         spriteBack: "/static/assets/sprites/greninja_back.gif",
+        megaSpriteFront: "/static/assets/sprites/greninja_mega_front.gif",
+        megaSpriteBack: "/static/assets/sprites/greninja_mega_back.gif",
         icon: "/static/assets/sprites/greninja_icon.png",
         rageArtName: "Water Shuriken Exploit Chain",
         rageArtDesc: "Blinding rapid shuriken barrage executing a privilege takeover.",
@@ -1010,7 +1033,7 @@ const CHARACTERS = {
                 onHit: 5,
                 range: 75,
                 hitbox: { x: 45, y: -65, w: 45, h: 28 },
-                sound: "light"
+                sound: "light", vfx: "slash1", animType: "jab", lungeX: 10, tilt: 6
             },
             "2": {
                 name: "Aerial Ace Palm",
@@ -1024,7 +1047,7 @@ const CHARACTERS = {
                 onHit: 7,
                 range: 85,
                 hitbox: { x: 50, y: -60, w: 50, h: 32 },
-                sound: "mid"
+                sound: "mid", vfx: "slash2", animType: "cross", lungeX: 15, tilt: 10
             },
             "3": {
                 name: "Low Torrent Sweep",
@@ -1038,7 +1061,7 @@ const CHARACTERS = {
                 onHit: 4,
                 range: 80,
                 hitbox: { x: 45, y: -20, w: 50, h: 22 },
-                sound: "mid"
+                sound: "mid", vfx: "low_arc", animType: "sweep", squashY: 0.8, tilt: -12, lungeX: 12, tilt: 10
             },
             "4": {
                 name: "Dark Pulse Roundhouse",
@@ -1052,7 +1075,7 @@ const CHARACTERS = {
                 onHit: 12,
                 range: 95,
                 hitbox: { x: 55, y: -80, w: 55, h: 38 },
-                sound: "heavy"
+                sound: "heavy", vfx: "crescent_arc", animType: "kick", lungeX: 18, stretchX: 1.2, tilt: 18
             },
             "df2": {
                 name: "Water Geyser Launcher",
@@ -1069,7 +1092,7 @@ const CHARACTERS = {
                 launchForceX: 4.0,
                 range: 90,
                 hitbox: { x: 50, y: -75, w: 55, h: 60 },
-                sound: "launch"
+                sound: "launch", vfx: "rising_geyser", animType: "launcher", lungeX: 14, stretchY: 1.3, tilt: -15
             },
             "ff2": {
                 name: "Shadow Sneak Thrust",
@@ -1084,7 +1107,7 @@ const CHARACTERS = {
                 dashImpulse: 15,
                 range: 120,
                 hitbox: { x: 55, y: -60, w: 60, h: 40 },
-                sound: "heavy"
+                sound: "heavy", vfx: "heavy_burst", animType: "dash_attack", lungeX: 25, stretchX: 1.25, tilt: 18
             },
             "special": {
                 name: "Water Shuriken Stream",
@@ -1100,7 +1123,7 @@ const CHARACTERS = {
                 speed: 22,
                 range: 310,
                 hitbox: { x: 60, y: -60, w: 50, h: 50 },
-                sound: "heavy"
+                sound: "heavy", vfx: "projectile", animType: "special", lungeX: 15, tilt: 10
             }
         },
         combos: [

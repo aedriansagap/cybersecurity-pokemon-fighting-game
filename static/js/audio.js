@@ -161,7 +161,7 @@ class SoundEngine {
         osc.frequency.setValueAtTime(880, now);
         osc.frequency.setValueAtTime(1320, now + 0.05);
         osc.frequency.setValueAtTime(1760, now + 0.1);
-        osc.frequency.exponentialRampToValueAtTime(110, now + 0.3);
+        osc.exponentialRampToValueAtTime(110, now + 0.3);
 
         gain.gain.setValueAtTime(0.75, now);
         gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
@@ -346,7 +346,17 @@ class SoundEngine {
     // Pokémon Victory Fanfare
     playVictoryFanfare() {
         if (!this.ctx || this.isMuted) return;
-        const notes = [\n            { f: 523.25, d: 0.15 }, // C5\n            { f: 523.25, d: 0.15 }, // C5\n            { f: 523.25, d: 0.15 }, // C5\n            { f: 523.25, d: 0.35 }, // C5\n            { f: 415.30, d: 0.35 }, // G#4\n            { f: 466.16, d: 0.35 }, // A#4\n            { f: 523.25, d: 0.25 }, // C5\n            { f: 466.16, d: 0.15 }, // A#4\n            { f: 523.25, d: 0.65 }  // C5\n        ];
+        const notes = [
+            { f: 523.25, d: 0.15 }, // C5
+            { f: 523.25, d: 0.15 }, // C5
+            { f: 523.25, d: 0.15 }, // C5
+            { f: 523.25, d: 0.35 }, // C5
+            { f: 415.30, d: 0.35 }, // G#4
+            { f: 466.16, d: 0.35 }, // A#4
+            { f: 523.25, d: 0.25 }, // C5
+            { f: 466.16, d: 0.15 }, // A#4
+            { f: 523.25, d: 0.65 }  // C5
+        ];
 
         let timeOffset = 0;
         notes.forEach(n => {
@@ -369,6 +379,12 @@ class SoundEngine {
             }, timeOffset * 1000);
             timeOffset += n.d + 0.02;
         });
+    }
+
+    // Victory sound alias
+    playVictory() {
+        this.stopBGM();
+        this.playVictoryFanfare();
     }
 
     // UI Menu Beep

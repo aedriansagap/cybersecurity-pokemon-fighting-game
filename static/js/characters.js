@@ -4,9 +4,27 @@
  * juggle properties, cyber specials, and Zero-Day Rage Arts.
  */
 
+const POKEMON_TYPES = {
+    STEEL: { name: 'STEEL', color: '#b7b9d0', textColor: '#212121' },
+    FIGHTING: { name: 'FIGHTING', color: '#c22e28', textColor: '#ffffff' },
+    GHOST: { name: 'GHOST', color: '#735797', textColor: '#ffffff' },
+    POISON: { name: 'POISON', color: '#a33ea1', textColor: '#ffffff' },
+    NORMAL: { name: 'NORMAL', color: '#a8a878', textColor: '#212121' },
+    ELECTRIC: { name: 'ELECTRIC', color: '#f7d02c', textColor: '#212121' },
+    BUG: { name: 'BUG', color: '#a6b91a', textColor: '#ffffff' },
+    FIRE: { name: 'FIRE', color: '#ee8130', textColor: '#ffffff' },
+    PSYCHIC: { name: 'PSYCHIC', color: '#f95587', textColor: '#ffffff' },
+    WATER: { name: 'WATER', color: '#6390f0', textColor: '#ffffff' },
+    DARK: { name: 'DARK', color: '#705746', textColor: '#ffffff' }
+};
+window.POKEMON_TYPES = POKEMON_TYPES;
+
 const CHARACTERS = {
     lucario: {
         id: "lucario",
+        types: ["STEEL", "FIGHTING"],
+        cry: "lucario",
+        themeColors: { primary: "#2a75bb", secondary: "#ecc94b", glow: "rgba(42, 117, 187, 0.5)" },
         name: "Lucario",
         title: "The Aura Firewall",
         archetype: "Mishima Martial Artist",
@@ -147,6 +165,9 @@ const CHARACTERS = {
 
     gengar: {
         id: "gengar",
+        types: ["GHOST", "POISON"],
+        cry: "gengar",
+        themeColors: { primary: "#735797", secondary: "#a33ea1", glow: "rgba(115, 87, 151, 0.5)" },
         name: "Gengar",
         title: "The Phantom Phisher",
         archetype: "Mixup / Infiltrator",
@@ -280,6 +301,9 @@ const CHARACTERS = {
 
     porygonz: {
         id: "porygonz",
+        types: ["NORMAL"],
+        cry: "porygonz",
+        themeColors: { primary: "#00b4d8", secondary: "#e63946", glow: "rgba(0, 180, 216, 0.5)" },
         name: "Porygon-Z",
         title: "The Glitch Protocol",
         archetype: "Zoner / Rogue Code",
@@ -413,6 +437,9 @@ const CHARACTERS = {
 
     scizor: {
         id: "scizor",
+        types: ["BUG", "STEEL"],
+        cry: "scizor",
+        themeColors: { primary: "#e53e3e", secondary: "#b7b9d0", glow: "rgba(229, 62, 62, 0.5)" },
         name: "Scizor",
         title: "The Hardened Firewall",
         archetype: "Heavy Armored Brawler",
@@ -544,6 +571,9 @@ const CHARACTERS = {
 
     blaziken: {
         id: "blaziken",
+        types: ["FIRE", "FIGHTING"],
+        cry: "blaziken",
+        themeColors: { primary: "#ee8130", secondary: "#c22e28", glow: "rgba(238, 129, 48, 0.5)" },
         name: "Blaziken",
         title: "The Flame Striker",
         archetype: "Hwoarang Kick Master",
@@ -675,6 +705,9 @@ const CHARACTERS = {
 
     mewtwo: {
         id: "mewtwo",
+        types: ["PSYCHIC"],
+        cry: "mewtwo",
+        themeColors: { primary: "#f95587", secondary: "#b7b9d0", glow: "rgba(249, 85, 135, 0.5)" },
         name: "Mewtwo",
         title: "The Root Admin",
         archetype: "Boss / Privilege Escalation",
@@ -803,6 +836,276 @@ const CHARACTERS = {
             { sequence: ["1", "2", "4"], name: "Sudo Force Check", damage: 145 },
             { sequence: ["df2", "2", "special"], name: "Root Escalation Juggle", damage: 222 },
             { sequence: ["3", "ff2", "special"], name: "Privilege Seizure Combo", damage: 206 }
+        ]
+    },
+
+    pikachu: {
+        id: "pikachu",
+        name: "Pikachu",
+        title: "The Overvoltage Daemon",
+        archetype: "Speed / Rushdown",
+        element: "Electric / Hardware Surge",
+        types: ["ELECTRIC"],
+        cry: "pikachu",
+        themeColors: { primary: "#f7d02c", secondary: "#ee1515", glow: "rgba(247, 208, 44, 0.5)" },
+        color: "#f7d02c",
+        auraColor: "rgba(247, 208, 44, 0.4)",
+        maxHp: 900,
+        maxFirewall: 250,
+        speed: 7.2,
+        dashSpeed: 18,
+        weight: 0.85,
+        width: 80,
+        height: 100,
+        spriteFront: "/static/assets/sprites/pikachu_front.gif",
+        spriteBack: "/static/assets/sprites/pikachu_back.gif",
+        icon: "/static/assets/sprites/pikachu_icon.png",
+        rageArtName: "Grid Overload EMP",
+        rageArtDesc: "Unleashes massive voltage spike that burns target input registers.",
+        moves: {
+            "1": {
+                name: "Spark Jab",
+                type: "high",
+                startup: 9,
+                active: 3,
+                recovery: 10,
+                damage: 24,
+                guardDamage: 8,
+                onBlock: 2,
+                onHit: 6,
+                range: 70,
+                hitbox: { x: 40, y: -50, w: 45, h: 25 },
+                sound: "light"
+            },
+            "2": {
+                name: "Thunder Palm",
+                type: "mid",
+                startup: 13,
+                active: 4,
+                recovery: 14,
+                damage: 44,
+                guardDamage: 20,
+                onBlock: -1,
+                onHit: 7,
+                range: 80,
+                hitbox: { x: 45, y: -45, w: 50, h: 30 },
+                sound: "mid"
+            },
+            "3": {
+                name: "Low Tail Sweep",
+                type: "low",
+                startup: 15,
+                active: 5,
+                recovery: 17,
+                damage: 34,
+                guardDamage: 16,
+                onBlock: -10,
+                onHit: 4,
+                range: 75,
+                hitbox: { x: 40, y: -15, w: 50, h: 20 },
+                sound: "mid"
+            },
+            "4": {
+                name: "Iron Tail Whip",
+                type: "high",
+                startup: 17,
+                active: 5,
+                recovery: 19,
+                damage: 58,
+                guardDamage: 28,
+                onBlock: 2,
+                onHit: 11,
+                range: 90,
+                hitbox: { x: 50, y: -65, w: 55, h: 35 },
+                sound: "heavy"
+            },
+            "df2": {
+                name: "Volt Tackle Launcher",
+                type: "mid",
+                startup: 14,
+                active: 5,
+                recovery: 23,
+                damage: 70,
+                guardDamage: 32,
+                onBlock: -9,
+                onHit: 20,
+                isLauncher: true,
+                launchForceY: -16.5,
+                launchForceX: 4.0,
+                range: 85,
+                hitbox: { x: 45, y: -60, w: 55, h: 55 },
+                sound: "launch"
+            },
+            "ff2": {
+                name: "Quick Attack Rush",
+                type: "mid",
+                startup: 12,
+                active: 4,
+                recovery: 16,
+                damage: 52,
+                guardDamage: 22,
+                onBlock: -2,
+                onHit: 8,
+                dashImpulse: 16,
+                range: 110,
+                hitbox: { x: 50, y: -45, w: 60, h: 35 },
+                sound: "heavy"
+            },
+            "special": {
+                name: "Thunderbolt Beam",
+                type: "mid",
+                startup: 20,
+                active: 6,
+                recovery: 22,
+                damage: 88,
+                guardDamage: 40,
+                onBlock: -4,
+                onHit: 16,
+                projectile: true,
+                speed: 21,
+                range: 300,
+                hitbox: { x: 55, y: -45, w: 45, h: 45 },
+                sound: "heavy"
+            }
+        },
+        combos: [
+            { sequence: ["1", "2", "4"], name: "Voltage Triple Check", damage: 126 },
+            { sequence: ["df2", "1", "special"], name: "Thunder Storm Juggle", damage: 182 }
+        ]
+    },
+
+    greninja: {
+        id: "greninja",
+        name: "Greninja",
+        title: "The Zero-Day Ninja",
+        archetype: "Stealth Infiltrator",
+        element: "Water / Dark",
+        types: ["WATER", "DARK"],
+        cry: "greninja",
+        themeColors: { primary: "#6390f0", secondary: "#705746", glow: "rgba(99, 144, 240, 0.5)" },
+        color: "#6390f0",
+        auraColor: "rgba(99, 144, 240, 0.4)",
+        maxHp: 960,
+        maxFirewall: 280,
+        speed: 6.9,
+        dashSpeed: 16,
+        weight: 0.92,
+        width: 85,
+        height: 115,
+        spriteFront: "/static/assets/sprites/greninja_front.gif",
+        spriteBack: "/static/assets/sprites/greninja_back.gif",
+        icon: "/static/assets/sprites/greninja_icon.png",
+        rageArtName: "Water Shuriken Exploit Chain",
+        rageArtDesc: "Blinding rapid shuriken barrage executing a privilege takeover.",
+        moves: {
+            "1": {
+                name: "Shadow Jab",
+                type: "high",
+                startup: 10,
+                active: 4,
+                recovery: 11,
+                damage: 26,
+                guardDamage: 9,
+                onBlock: 1,
+                onHit: 5,
+                range: 75,
+                hitbox: { x: 45, y: -65, w: 45, h: 28 },
+                sound: "light"
+            },
+            "2": {
+                name: "Aerial Ace Palm",
+                type: "mid",
+                startup: 14,
+                active: 4,
+                recovery: 15,
+                damage: 46,
+                guardDamage: 22,
+                onBlock: -2,
+                onHit: 7,
+                range: 85,
+                hitbox: { x: 50, y: -60, w: 50, h: 32 },
+                sound: "mid"
+            },
+            "3": {
+                name: "Low Torrent Sweep",
+                type: "low",
+                startup: 16,
+                active: 5,
+                recovery: 18,
+                damage: 36,
+                guardDamage: 18,
+                onBlock: -11,
+                onHit: 4,
+                range: 80,
+                hitbox: { x: 45, y: -20, w: 50, h: 22 },
+                sound: "mid"
+            },
+            "4": {
+                name: "Dark Pulse Roundhouse",
+                type: "high",
+                startup: 18,
+                active: 6,
+                recovery: 20,
+                damage: 60,
+                guardDamage: 30,
+                onBlock: 3,
+                onHit: 12,
+                range: 95,
+                hitbox: { x: 55, y: -80, w: 55, h: 38 },
+                sound: "heavy"
+            },
+            "df2": {
+                name: "Water Geyser Launcher",
+                type: "mid",
+                startup: 15,
+                active: 5,
+                recovery: 24,
+                damage: 74,
+                guardDamage: 34,
+                onBlock: -10,
+                onHit: 20,
+                isLauncher: true,
+                launchForceY: -17.0,
+                launchForceX: 4.0,
+                range: 90,
+                hitbox: { x: 50, y: -75, w: 55, h: 60 },
+                sound: "launch"
+            },
+            "ff2": {
+                name: "Shadow Sneak Thrust",
+                type: "mid",
+                startup: 15,
+                active: 5,
+                recovery: 18,
+                damage: 64,
+                guardDamage: 30,
+                onBlock: -2,
+                onHit: 12,
+                dashImpulse: 15,
+                range: 120,
+                hitbox: { x: 55, y: -60, w: 60, h: 40 },
+                sound: "heavy"
+            },
+            "special": {
+                name: "Water Shuriken Stream",
+                type: "mid",
+                startup: 20,
+                active: 6,
+                recovery: 22,
+                damage: 92,
+                guardDamage: 42,
+                onBlock: -4,
+                onHit: 18,
+                projectile: true,
+                speed: 22,
+                range: 310,
+                hitbox: { x: 60, y: -60, w: 50, h: 50 },
+                sound: "heavy"
+            }
+        },
+        combos: [
+            { sequence: ["1", "2", "4"], name: "Ninja Triple Cut", damage: 132 },
+            { sequence: ["df2", "2", "special"], name: "Hydro Launcher Juggle", damage: 212 }
         ]
     }
 };

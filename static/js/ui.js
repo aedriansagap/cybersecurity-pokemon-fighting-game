@@ -338,8 +338,17 @@ class UIManager {
 
         document.getElementById("btn-victory-menu").addEventListener("click", () => {
             document.getElementById("victory-overlay").classList.add("hidden");
+            if (window.gameEngine) {
+                window.gameEngine.running = false;
+                if (window.gameEngine.roundTimer) {
+                    clearInterval(window.gameEngine.roundTimer);
+                    window.gameEngine.roundTimer = null;
+                }
+            }
             this.showScreen("menu");
-            window.soundEngine.stopBGM();
+            if (window.soundEngine) {
+                window.soundEngine.stopBGM();
+            }
         });
 
         // Incident Response Trivia Button in HUD / Menu

@@ -13,4 +13,9 @@ if [ ! -f "static/assets/sprites/lucario_front.gif" ]; then
     python3 download_sprites.py
 fi
 
+if [ ! -f "static/assets/audio/lucario_cry.mp3" ]; then
+    echo "Downloading Pokémon cries and BGMs..."
+    python3 download_audio.py
+fi
+
 python3 start.py

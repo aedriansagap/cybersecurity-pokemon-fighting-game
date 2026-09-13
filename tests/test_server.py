@@ -82,7 +82,17 @@ class TestCyberMonServer(unittest.TestCase):
     def test_index_page(self):
         res = self.client.get("/")
         self.assertEqual(res.status_code, 200)
-        self.assertIn("CyberMon: Tekken Protocol", res.text)
+        self.assertIn("CYBERMON", res.text)
+
+    def test_audio_assets(self):
+        # Verify cries and BGM files are served
+        res_cry = self.client.get("/static/assets/audio/lucario_cry.mp3")
+        self.assertEqual(res_cry.status_code, 200)
+        self.assertGreater(len(res_cry.content), 1000)
+
+        res_bgm = self.client.get("/static/assets/audio/bw2-kanto-gym-leader.mp3")
+        self.assertEqual(res_bgm.status_code, 200)
+        self.assertGreater(len(res_bgm.content), 50000)
 
 if __name__ == "__main__":
     unittest.main()

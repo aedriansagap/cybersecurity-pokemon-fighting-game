@@ -450,6 +450,106 @@ class SoundEngine {
         osc.stop(now + 0.15);
     }
 
+    // Slash Swipe SFX for Light Combos
+    playSlash() {
+        if (!this.ctx || this.isMuted) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(800, now);
+        osc.frequency.exponentialRampToValueAtTime(160, now + 0.12);
+
+        gain.gain.setValueAtTime(0.45, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+
+        osc.connect(gain);
+        gain.connect(this.sfxGain);
+        osc.start(now);
+        osc.stop(now + 0.12);
+        this.playNoiseCrack(0.06, 0.35);
+    }
+
+    // Ground Eruption / Earth Shatter for Heavy Launchers
+    playEarthShatter() {
+        if (!this.ctx || this.isMuted) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(140, now);
+        osc.frequency.exponentialRampToValueAtTime(35, now + 0.35);
+
+        gain.gain.setValueAtTime(0.8, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+
+        osc.connect(gain);
+        gain.connect(this.sfxGain);
+        osc.start(now);
+        osc.stop(now + 0.35);
+
+        this.playSubBass(45, 0.45, 1.0);
+        this.playNoiseCrack(0.2, 0.6);
+    }
+
+    // Mega Evolution Energy Surge Chime
+    playMegaEvolve() {
+        if (!this.ctx || this.isMuted) return;
+        const now = this.ctx.currentTime;
+
+        // Ascending frequency sweep
+        const sweep = this.ctx.createOscillator();
+        const sweepGain = this.ctx.createGain();
+        sweep.type = 'sine';
+        sweep.frequency.setValueAtTime(220, now);
+        sweep.frequency.exponentialRampToValueAtTime(1760, now + 0.45);
+
+        sweepGain.gain.setValueAtTime(0.001, now);
+        sweepGain.gain.linearRampToValueAtTime(0.6, now + 0.25);
+        sweepGain.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
+
+        sweep.connect(sweepGain);
+        sweepGain.connect(this.sfxGain);
+        sweep.start(now);
+        sweep.stop(now + 0.55);
+
+        // High shimmer bell
+        setTimeout(() => {
+            if (!this.ctx || this.isMuted) return;
+            const t = this.ctx.currentTime;
+            const chime = this.ctx.createOscillator();
+            const chimeGain = this.ctx.createGain();
+            chime.type = 'triangle';
+            chime.frequency.setValueAtTime(1760, t);
+            chime.frequency.setValueAtTime(2349, t + 0.1);
+            chimeGain.gain.setValueAtTime(0.5, t);
+            chimeGain.gain.exponentialRampToValueAtTime(0.001, t + 0.4);
+            chime.connect(chimeGain);
+            chimeGain.connect(this.sfxGain);
+            chime.start(t);
+            chime.stop(t + 0.4);
+            this.playSubBass(55, 0.5, 0.9);
+        }, 300);
+    }
+
+    // Classic Pokémon Menu Select Chime
+    playMenuSelect() {
+        if (!this.ctx || this.isMuted) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(659.25, now); // E5
+        osc.frequency.setValueAtTime(880.00, now + 0.05); // A5
+        gain.gain.setValueAtTime(0.25, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+
+        osc.connect(gain);
+        gain.connect(this.sfxGain);
+        osc.start(now);
+        osc.stop(now + 0.12);
+    }
+
     // Tournament Announcer Voice using SpeechSynthesis
     announce(text, pitch = 0.85, rate = 1.05) {
         if (!window.speechSynthesis) return;

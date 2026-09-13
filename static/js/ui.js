@@ -88,6 +88,16 @@ class UIManager {
             });
         }
 
+        // BGM selector
+        const bgmSelect = document.getElementById("bgm-select");
+        if (bgmSelect) {
+            bgmSelect.addEventListener("change", (e) => {
+                if (window.soundEngine) {
+                    window.soundEngine.switchTrack(e.target.value);
+                }
+            });
+        }
+
         // Rematch & Return to Menu on Victory
         document.getElementById("btn-rematch").addEventListener("click", () => {
             document.getElementById("victory-overlay").classList.add("hidden");
@@ -131,10 +141,17 @@ class UIManager {
             card.className = `char-card ${char.id === this.selectedP1Char ? 'active' : ''}`;
             card.dataset.charId = char.id;
 
+            const types = char.types || ["NORMAL"];
+            const typeBadges = types.map(t => {
+                const tInfo = (window.POKEMON_TYPES && window.POKEMON_TYPES[t]) || { color: "#888", textColor: "#fff" };
+                return `<span class="type-pill" style="background:${tInfo.color}; color:${tInfo.textColor || '#fff'}">${t}</span>`;
+            }).join(" ");
+
             card.innerHTML = `
                 <img src="${char.icon}" class="char-icon" alt="${char.name}">
                 <div class="char-card-info">
                     <div class="char-card-name">${char.name}</div>
+                    <div class="char-card-types">${typeBadges}</div>
                     <div class="char-card-arch">${char.archetype}</div>
                 </div>
             `;
@@ -144,7 +161,10 @@ class UIManager {
                 document.querySelectorAll(".char-card").forEach(c => c.classList.remove("active"));
                 card.classList.add("active");
                 this.updateCharacterPreview();
-                window.soundEngine.playUiBeep(600);
+                if (window.soundEngine) {
+                    window.soundEngine.playCry(char.id);
+                    window.soundEngine.playUiBeep(600);
+                }
             });
 
             grid.appendChild(card);
@@ -157,24 +177,35 @@ class UIManager {
 
         document.getElementById("preview-name").textContent = char.name;
         document.getElementById("preview-title").textContent = char.title;
-        document.getElementById("preview-archetype").textContent = `${char.archetype} • ${char.element}`;
+
+        const types = char.types || ["NORMAL"];
+        const typeBadges = types.map(t => {
+            const tInfo = (window.POKEMON_TYPES && window.POKEMON_TYPES[t]) || { color: "#888", textColor: "#fff" };
+            return `<span class="type-pill" style="background:${tInfo.color}; color:${tInfo.textColor || '#fff'}">${t}</span>`;
+        }).join(" ");
+
+        document.getElementById("preview-archetype").innerHTML = `${typeBadges} &bull; ${char.archetype}`;
         document.getElementById("preview-desc").textContent = char.rageArtDesc;
         document.getElementById("preview-rage-art").textContent = `RAGE ART: ${char.rageArtName}`;
 
         const img = document.getElementById("preview-sprite");
         img.src = char.spriteFront;
 
-        // Populate move list
+        // Dynamic theme glow on preview stage
+        const previewStage = document.querySelector(".preview-stage");
+        if (previewStage && char.themeColors) {
+            previewStage.style.borderColor = char.themeColors.primary;
+            previewStage.style.boxShadow = `0 0 25px ${char.themeColors.glow || 'rgba(42, 117, 187, 0.4)'}`;
+        }
+
+        // Populate move list with simplified controls
         const moveListEl = document.getElementById("preview-moves");
         moveListEl.innerHTML = `
-            <li><span class="cmd">1 (J)</span> ${char.moves["1"].name} <span class="dmg">${char.moves["1"].damage} DMG [${char.moves["1"].type.toUpperCase()}]</span></li>
-            <li><span class="cmd">2 (I)</span> ${char.moves["2"].name} <span class="dmg">${char.moves["2"].damage} DMG [${char.moves["2"].type.toUpperCase()}]</span></li>
-            <li><span class="cmd">3 (K)</span> ${char.moves["3"].name} <span class="dmg">${char.moves["3"].damage} DMG [${char.moves["3"].type.toUpperCase()}]</span></li>
-            <li><span class="cmd">4 (O)</span> ${char.moves["4"].name} <span class="dmg">${char.moves["4"].damage} DMG [${char.moves["4"].type.toUpperCase()}]</span></li>
-            <li><span class="cmd">df+2 (S+D+I)</span> ${char.moves.df2.name} <span class="dmg">LAUNCHER ⚡</span></li>
-            <li><span class="cmd">f,f+2 (D,D+I)</span> ${char.moves.ff2.name} <span class="dmg">${char.moves.ff2.damage} DMG</span></li>
-            <li><span class="cmd">Special (U)</span> ${char.moves.special.name} <span class="dmg">${char.moves.special.damage} DMG</span></li>
-            <li><span class="cmd">Rage Art (SPACE)</span> ${char.rageArtName} <span class="dmg">240 DMG [HP &lt; 35%]</span></li>
+            <li><span class="cmd">[J] Light Combo</span> ${char.moves["1"].name} <span class="dmg">${char.moves["1"].damage} DMG [Rapid Taps Auto-Chain!]</span></li>
+            <li><span class="cmd">[K] Heavy Launcher</span> ${char.moves.df2.name} <span class="dmg">${char.moves.df2.damage} DMG [AIR JUGGLE ⚡]</span></li>
+            <li><span class="cmd">[L] Special Move</span> ${char.moves.special.name} <span class="dmg">${char.moves.special.damage} DMG [PROJECTILE/RUSH]</span></li>
+            <li><span class="cmd">[SPACE] Super Move</span> ${char.rageArtName} <span class="dmg">240 DMG [ZERO-DAY EXPLOIT]</span></li>
+            <li><span class="cmd">WASD</span> Movement &amp; Guard <span class="dmg">Hold Back: Guard | Double Tap: Dash/3D Sidestep</span></li>
         `;
     }
 

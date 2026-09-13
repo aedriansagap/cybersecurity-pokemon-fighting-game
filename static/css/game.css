@@ -1,14 +1,18 @@
 @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=Rajdhani:wght@500;700&display=swap');
 
 :root {
-    --bg-dark: #050b14;
+    --bg-dark: #070d18;
+    --poke-yellow: #ffcb05;
+    --poke-blue: #2a75bb;
+    --poke-red: #ee1515;
+    --poke-dark: #0a1424;
     --neon-blue: #00e5ff;
     --neon-purple: #ab47bc;
     --neon-red: #ff1744;
     --neon-green: #00e676;
     --neon-yellow: #ffea00;
-    --panel-bg: rgba(13, 27, 42, 0.85);
-    --border-glow: 0 0 15px rgba(0, 229, 255, 0.4);
+    --panel-bg: rgba(14, 26, 46, 0.9);
+    --border-glow: 0 0 15px rgba(255, 203, 5, 0.4);
 }
 
 * {
@@ -36,7 +40,7 @@ body {
     left: 0;
     width: 100vw;
     height: 100vh;
-    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.22) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.02), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.02));
     background-size: 100% 3px, 6px 100%;
     pointer-events: none;
     z-index: 999;
@@ -47,8 +51,8 @@ body {
     width: 1000px;
     height: 600px;
     background: #000;
-    box-shadow: 0 0 35px rgba(0, 229, 255, 0.3), inset 0 0 20px rgba(0, 229, 255, 0.2);
-    border: 2px solid var(--neon-blue);
+    box-shadow: 0 0 35px rgba(42, 117, 187, 0.4), inset 0 0 20px rgba(255, 203, 5, 0.2);
+    border: 2.5px solid var(--poke-blue);
     border-radius: 8px;
     overflow: hidden;
 }
@@ -63,70 +67,113 @@ body {
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    background: radial-gradient(circle at center, #0d1b2a 0%, #050b14 100%);
+    background: radial-gradient(circle at center, #0e1e38 0%, #060c16 100%);
 }
 
 .hidden {
     display: none !important;
 }
 
-/* Typography & Titles */
+/* Pokémon Logo & Header */
+.poke-logo-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 6px;
+}
+
+.pokeball-badge {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: linear-gradient(180deg, var(--poke-red) 50%, #ffffff 50%);
+    border: 3.5px solid #111;
+    position: relative;
+    box-shadow: 0 0 16px rgba(238, 21, 21, 0.7);
+}
+
+.pokeball-badge::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: #111;
+    transform: translateY(-50%);
+}
+
+.pokeball-badge::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 14px;
+    height: 14px;
+    background: #ffffff;
+    border: 3px solid #111;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    box-shadow: 0 0 6px #00e5ff;
+}
+
 h1.game-logo {
     font-family: 'Orbitron', monospace, sans-serif;
-    font-size: 46px;
+    font-size: 52px;
     font-weight: 900;
     text-transform: uppercase;
     letter-spacing: 4px;
-    color: #fff;
-    text-shadow: 0 0 20px var(--neon-blue), 0 0 40px var(--neon-blue);
-    margin-bottom: 6px;
+    color: var(--poke-yellow);
+    text-shadow: -3px -3px 0 var(--poke-blue), 3px -3px 0 var(--poke-blue), -3px 3px 0 var(--poke-blue), 3px 3px 0 var(--poke-blue), 0 0 25px rgba(255, 203, 5, 0.6);
+    margin-bottom: 0px;
 }
 
 .sub-tagline {
     font-family: 'Orbitron', monospace;
-    font-size: 14px;
-    letter-spacing: 6px;
-    color: var(--neon-yellow);
-    margin-bottom: 35px;
-    text-shadow: 0 0 10px rgba(255, 234, 0, 0.5);
+    font-size: 13px;
+    letter-spacing: 5px;
+    color: var(--poke-yellow);
+    margin-bottom: 30px;
+    text-shadow: 0 0 10px rgba(255, 203, 5, 0.5);
 }
 
 /* Buttons & Menu */
 .menu-options {
     display: flex;
     flex-direction: column;
-    gap: 15px;
-    width: 380px;
+    gap: 13px;
+    width: 400px;
 }
 
 .cyber-btn {
     font-family: 'Orbitron', monospace;
-    font-size: 18px;
+    font-size: 17px;
     font-weight: 700;
     letter-spacing: 2px;
-    padding: 14px 20px;
-    background: rgba(13, 27, 42, 0.7);
+    padding: 13px 20px;
+    background: rgba(14, 28, 48, 0.8);
     color: #fff;
-    border: 1.5px solid var(--neon-blue);
+    border: 1.5px solid var(--poke-blue);
     border-radius: 4px;
     cursor: pointer;
     transition: all 0.2s ease;
     text-transform: uppercase;
-    box-shadow: 0 0 10px rgba(0, 229, 255, 0.15);
+    box-shadow: 0 0 10px rgba(42, 117, 187, 0.3);
     display: flex;
     justify-content: space-between;
     align-items: center;
 }
 
 .cyber-btn:hover {
-    background: var(--neon-blue);
-    color: #050b14;
-    box-shadow: 0 0 25px var(--neon-blue);
+    background: var(--poke-blue);
+    color: #fff;
+    box-shadow: 0 0 25px rgba(42, 117, 187, 0.7);
+    border-color: var(--poke-yellow);
     transform: translateY(-2px);
 }
 
 .cyber-btn.small {
-    font-size: 14px;
+    font-size: 13px;
     padding: 8px 14px;
 }
 
@@ -140,18 +187,44 @@ h1.game-logo {
     box-shadow: 0 0 20px var(--neon-red);
 }
 
+/* BGM Selector Bar */
+.bgm-selector-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(10, 20, 36, 0.9);
+    border: 1.5px solid var(--poke-yellow);
+    border-radius: 6px;
+    padding: 8px 14px;
+    font-family: 'Orbitron', monospace;
+    font-size: 12px;
+    color: var(--poke-yellow);
+    box-shadow: 0 0 10px rgba(255, 203, 5, 0.25);
+}
+
+.bgm-selector-bar select {
+    background: #081220;
+    color: #ffffff;
+    border: 1px solid var(--poke-blue);
+    padding: 5px 8px;
+    border-radius: 4px;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+}
+
 /* Character Select Screen */
 .char-select-container {
     display: flex;
-    width: 94%;
-    height: 85%;
+    width: 960px;
+    height: 560px;
     gap: 20px;
 }
 
 .char-grid-panel {
     flex: 1.1;
     background: var(--panel-bg);
-    border: 1px solid rgba(0, 229, 255, 0.4);
+    border: 1.5px solid var(--poke-blue);
     border-radius: 6px;
     padding: 15px;
     display: flex;
@@ -160,65 +233,90 @@ h1.game-logo {
 
 .panel-header {
     font-family: 'Orbitron', monospace;
-    font-size: 18px;
-    color: var(--neon-blue);
-    border-bottom: 1px solid rgba(0, 229, 255, 0.3);
+    font-size: 17px;
+    color: var(--poke-yellow);
+    border-bottom: 1px solid rgba(255, 203, 5, 0.4);
     padding-bottom: 8px;
-    margin-bottom: 15px;
+    margin-bottom: 12px;
 }
 
 .char-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 12px;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
     overflow-y: auto;
 }
 
 .char-card {
-    background: rgba(5, 11, 20, 0.8);
-    border: 1.5px solid #223344;
-    border-radius: 4px;
-    padding: 10px;
+    background: rgba(8, 16, 30, 0.85);
+    border: 1.5px solid #22354c;
+    border-radius: 6px;
+    padding: 8px;
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: 10px;
+    text-align: center;
     cursor: pointer;
     transition: all 0.2s;
 }
 
 .char-card:hover {
-    border-color: var(--neon-yellow);
-    background: rgba(255, 234, 0, 0.05);
+    border-color: var(--poke-yellow);
+    background: rgba(255, 203, 5, 0.08);
+    transform: translateY(-2px);
 }
 
 .char-card.active {
-    border-color: var(--neon-blue);
-    background: rgba(0, 229, 255, 0.15);
-    box-shadow: 0 0 15px rgba(0, 229, 255, 0.4);
+    border-color: var(--poke-yellow);
+    background: rgba(42, 117, 187, 0.25);
+    box-shadow: 0 0 16px rgba(255, 203, 5, 0.4);
 }
 
 .char-icon {
     width: 44px;
     height: 44px;
     object-fit: contain;
+    margin-bottom: 4px;
 }
 
 .char-card-name {
     font-family: 'Orbitron', monospace;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 700;
+    color: #fff;
+}
+
+.char-card-types {
+    display: flex;
+    gap: 4px;
+    margin: 4px 0;
+    flex-wrap: wrap;
+    justify-content: center;
 }
 
 .char-card-arch {
-    font-size: 11px;
+    font-size: 10px;
     color: #8899aa;
+}
+
+/* Type Pill Badges */
+.type-pill {
+    display: inline-block;
+    font-size: 8px;
+    font-weight: 800;
+    font-family: 'Orbitron', sans-serif;
+    padding: 2px 5px;
+    border-radius: 3px;
+    text-transform: uppercase;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+    letter-spacing: 0.5px;
 }
 
 /* Character Preview Panel */
 .char-preview-panel {
     flex: 0.9;
     background: var(--panel-bg);
-    border: 1px solid rgba(0, 229, 255, 0.4);
+    border: 1.5px solid var(--poke-blue);
     border-radius: 6px;
     padding: 15px;
     display: flex;
@@ -230,13 +328,18 @@ h1.game-logo {
     display: flex;
     flex-direction: column;
     align-items: center;
-    margin: 10px 0;
+    margin: 8px 0;
+    border: 1.5px solid var(--poke-blue);
+    border-radius: 6px;
+    padding: 10px;
+    background: rgba(6, 14, 26, 0.7);
+    transition: all 0.3s;
 }
 
 .preview-sprite-img {
-    height: 120px;
+    height: 125px;
     object-fit: contain;
-    filter: drop-shadow(0 0 15px rgba(0, 229, 255, 0.5));
+    filter: drop-shadow(0 0 15px rgba(42, 117, 187, 0.6));
 }
 
 .preview-name {
@@ -248,22 +351,23 @@ h1.game-logo {
 }
 
 .preview-title {
-    font-size: 14px;
-    color: var(--neon-yellow);
+    font-size: 13px;
+    color: var(--poke-yellow);
 }
 
 .preview-archetype {
     font-size: 12px;
     color: #99aabb;
+    margin-top: 2px;
 }
 
 .preview-move-list {
     background: rgba(5, 11, 20, 0.9);
     border: 1px solid #1a2a3a;
-    padding: 10px;
+    padding: 8px 10px;
     border-radius: 4px;
     font-size: 12px;
-    height: 140px;
+    height: 130px;
     overflow-y: auto;
     list-style: none;
 }
@@ -275,7 +379,7 @@ h1.game-logo {
 }
 
 .preview-move-list .cmd {
-    color: var(--neon-yellow);
+    color: var(--poke-yellow);
     font-weight: bold;
 }
 .preview-move-list .dmg {
@@ -283,7 +387,7 @@ h1.game-logo {
 }
 
 .rage-art-badge {
-    color: var(--neon-red);
+    color: var(--poke-red);
     font-weight: bold;
     font-size: 12px;
     margin-top: 4px;
@@ -298,7 +402,7 @@ h1.game-logo {
 
 .battle-hud-actions {
     position: absolute;
-    bottom: 12px;
+    bottom: 35px;
     left: 20px;
     z-index: 100;
     display: flex;
@@ -322,16 +426,16 @@ h1.game-logo {
 .modal-box {
     width: 600px;
     background: var(--panel-bg);
-    border: 2px solid var(--neon-blue);
+    border: 2px solid var(--poke-blue);
     border-radius: 8px;
     padding: 25px;
-    box-shadow: 0 0 30px rgba(0, 229, 255, 0.3);
+    box-shadow: 0 0 30px rgba(42, 117, 187, 0.5);
 }
 
 .modal-title {
     font-family: 'Orbitron', monospace;
     font-size: 22px;
-    color: var(--neon-blue);
+    color: var(--poke-yellow);
     margin-bottom: 15px;
     display: flex;
     justify-content: space-between;
@@ -339,7 +443,7 @@ h1.game-logo {
 }
 
 .trivia-timer {
-    color: var(--neon-yellow);
+    color: var(--poke-yellow);
     font-size: 18px;
 }
 
@@ -371,8 +475,8 @@ h1.game-logo {
 }
 
 .trivia-opt-btn:hover {
-    border-color: var(--neon-yellow);
-    background: rgba(255, 234, 0, 0.15);
+    border-color: var(--poke-yellow);
+    background: rgba(255, 203, 5, 0.15);
 }
 
 .trivia-explanation-box {
@@ -400,8 +504,8 @@ h1.game-logo {
 }
 
 .controls-table th {
-    background: rgba(0, 229, 255, 0.15);
-    color: var(--neon-blue);
+    background: rgba(42, 117, 187, 0.25);
+    color: var(--poke-yellow);
     font-family: 'Orbitron', monospace;
 }
 
@@ -410,7 +514,7 @@ h1.game-logo {
     border: 1px solid #445566;
     padding: 2px 6px;
     border-radius: 3px;
-    color: var(--neon-yellow);
+    color: var(--poke-yellow);
     font-family: monospace;
 }
 
@@ -431,10 +535,10 @@ h1.game-logo {
 
 .victory-title {
     font-family: 'Orbitron', monospace;
-    font-size: 50px;
+    font-size: 52px;
     font-weight: 900;
-    color: var(--neon-yellow);
-    text-shadow: 0 0 25px var(--neon-yellow);
+    color: var(--poke-yellow);
+    text-shadow: -2px -2px 0 var(--poke-blue), 2px -2px 0 var(--poke-blue), 0 0 25px var(--poke-yellow);
     margin-bottom: 10px;
 }
 
@@ -442,7 +546,7 @@ h1.game-logo {
     height: 160px;
     object-fit: contain;
     margin: 15px 0;
-    filter: drop-shadow(0 0 20px rgba(0, 229, 255, 0.7));
+    filter: drop-shadow(0 0 20px rgba(255, 203, 5, 0.7));
 }
 
 .victory-actions {

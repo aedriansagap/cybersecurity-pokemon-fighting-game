@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CyberMon: Tekken Protocol - 1v1 Cybersecurity Fighting Game</title>
+    <link rel="stylesheet" href="/static/css/game.css">
+</head>
+<body>
+    <div class="crt-overlay"></div>
+
+    <div id="game-container">
+        <!-- 1. MAIN MENU SCREEN -->
+        <div id="screen-menu" class="game-screen">
+            <h1 class="game-logo">CYBERMON</h1>
+            <div class="sub-tagline">⚡ TEKKEN PROTOCOL // CYBERSECURITY TOURNAMENT ⚡</div>
+
+            <div class="menu-options">
+                <button id="btn-mode-bot" class="cyber-btn">
+                    <span>1V1 VS CYBER BOT</span>
+                    <span>▶</span>
+                </button>
+                <button id="btn-mode-local" class="cyber-btn">
+                    <span>1V1 LOCAL PVP</span>
+                    <span>▶</span>
+                </button>
+                <button id="btn-mode-online" class="cyber-btn">
+                    <span>1V1 LAN / ONLINE PVP</span>
+                    <span>▶</span>
+                </button>
+                <button id="btn-mode-training" class="cyber-btn">
+                    <span>SOC SANDBOX / TRAINING</span>
+                    <span>▶</span>
+                </button>
+                <button id="btn-view-controls" class="cyber-btn small">
+                    <span>CONTROLS &amp; MOVE LIST</span>
+                    <span>⚙</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- 2. CHARACTER SELECT SCREEN -->
+        <div id="screen-char-select" class="game-screen hidden">
+            <div class="char-select-container">
+                <!-- Left: Fighter Grid -->
+                <div class="char-grid-panel">
+                    <div class="panel-header">SELECT COMBAT DAEMON</div>
+                    <div id="character-grid" class="char-grid"></div>
+
+                    <div style="margin-top: auto; display: flex; gap: 10px; align-items: center;">
+                        <label for="bot-difficulty" style="font-family: 'Orbitron', monospace; font-size: 12px; color: var(--neon-yellow);">THREAT LEVEL:</label>
+                        <select id="bot-difficulty" style="background: #0d1b2a; color: #fff; border: 1px solid var(--neon-blue); padding: 5px; border-radius: 4px; font-family: 'Rajdhani', sans-serif;">
+                            <option value="script_kiddie">Script Kiddie (Easy)</option>
+                            <option value="white_hat">White Hat Sentinel (Medium)</option>
+                            <option value="apt_hacker" selected>APT Infiltrator (Hard)</option>
+                            <option value="zero_day_overlord">Zero-Day Overlord (Nightmare)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Right: Character Info & Frame Data -->
+                <div class="char-preview-panel">
+                    <div class="panel-header">DAEMON TELEMETRY</div>
+                    <div class="preview-stage">
+                        <img id="preview-sprite" class="preview-sprite-img" src="" alt="Fighter">
+                        <div id="preview-name" class="preview-name">LUCARIO</div>
+                        <div id="preview-title" class="preview-title">The Aura Firewall</div>
+                        <div id="preview-archetype" class="preview-archetype">Mishima Martial Artist</div>
+                        <div id="preview-rage-art" class="rage-art-badge">RAGE ART: Quantum Aura Burst</div>
+                    </div>
+
+                    <div style="font-size: 11px; color: #aabbcc; margin-bottom: 5px;" id="preview-desc"></div>
+                    <ul id="preview-moves" class="preview-move-list"></ul>
+
+                    <div style="display: flex; gap: 10px; margin-top: 10px;">
+                        <button id="btn-back-to-menu" class="cyber-btn small" style="flex: 0.4;">BACK</button>
+                        <button id="btn-start-fight" class="cyber-btn" style="flex: 0.6; justify-content: center;">INITIATE FIGHT</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. ONLINE LOBBY SCREEN -->
+        <div id="screen-online-lobby" class="game-screen hidden">
+            <h1 class="game-logo" style="font-size: 32px;">LAN / ONLINE MULTIPLAYER</h1>
+            <div class="sub-tagline">CONNECT TO A PYTHON WEBSOCKET ROOM</div>
+
+            <div class="menu-options" style="width: 440px;">
+                <div style="display: flex; gap: 10px;">
+                    <input type="text" id="room-code-input" placeholder="ENTER ROOM CODE (e.g. CYBER-404)" style="flex: 1; padding: 12px; background: rgba(5, 11, 20, 0.9); border: 1.5px solid var(--neon-blue); color: #fff; border-radius: 4px; font-family: 'Orbitron', monospace; font-size: 14px;">
+                    <button id="btn-join-room" class="cyber-btn small" style="padding: 10px 18px;">JOIN</button>
+                </div>
+                <button id="btn-create-room" class="cyber-btn">CREATE RANDOM ROOM</button>
+                <div id="online-status" style="font-family: 'Orbitron', monospace; font-size: 13px; color: var(--neon-yellow); text-align: center; margin-top: 10px;">Waiting for connection...</div>
+                <button onclick="window.uiManager.showScreen('menu')" class="cyber-btn small" style="margin-top: 20px; justify-content: center;">BACK TO MAIN MENU</button>
+            </div>
+        </div>
+
+        <!-- 4. BATTLE CANVAS SCREEN -->
+        <div id="screen-battle" class="game-screen hidden" style="padding: 0; background: #000;">
+            <canvas id="game-canvas" width="1000" height="600"></canvas>
+            <div class="battle-hud-actions">
+                <button id="btn-trigger-trivia" class="cyber-btn small" style="background: rgba(13, 27, 42, 0.9);">
+                    <span>🛡️ SOC INCIDENT HACK</span>
+                </button>
+                <button onclick="document.getElementById('controls-modal').classList.remove('hidden')" class="cyber-btn small" style="background: rgba(13, 27, 42, 0.9);">
+                    <span>CONTROLS</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- 5. CYBERSECURITY TRIVIA / INCIDENT RESPONSE MODAL -->
+        <div id="trivia-modal" class="modal-overlay hidden">
+            <div class="modal-box">
+                <div class="modal-title">
+                    <span id="trivia-category">[NETWORK SECURITY] INCIDENT ALERT</span>
+                    <span class="trivia-timer">⏱️ <span id="trivia-timer-num">10</span>s</span>
+                </div>
+                <div id="trivia-question" class="trivia-question-text"></div>
+                <div id="trivia-options" class="trivia-options-grid"></div>
+                <div id="trivia-explanation" class="trivia-explanation-box hidden"></div>
+            </div>
+        </div>
+
+        <!-- 6. CONTROLS GUIDE MODAL -->
+        <div id="controls-modal" class="modal-overlay hidden">
+            <div class="modal-box" style="width: 720px; max-height: 90vh; overflow-y: auto;">
+                <div class="modal-title">
+                    <span>TEKKEN COMBAT CONTROLS</span>
+                    <button id="btn-close-controls" class="cyber-btn small" style="padding: 4px 10px;">✕</button>
+                </div>
+                <table class="controls-table">
+                    <thead>
+                        <tr>
+                            <th>Action</th>
+                            <th>Player 1 Keyboard</th>
+                            <th>Player 2 (Local PvP)</th>
+                            <th>Tekken Function</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Move / Guard</td>
+                            <td><span class="kbd-badge">A</span> (Back) / <span class="kbd-badge">D</span> (Fwd)</td>
+                            <td><span class="kbd-badge">←</span> / <span class="kbd-badge">→</span></td>
+                            <td>Hold Back to High Block</td>
+                        </tr>
+                        <tr>
+                            <td>Crouch / Low Block</td>
+                            <td><span class="kbd-badge">S</span> (Down) / <span class="kbd-badge">S+A</span></td>
+                            <td><span class="kbd-badge">↓</span> / <span class="kbd-badge">↓+←</span></td>
+                            <td>Blocks Lows, Ducks Highs</td>
+                        </tr>
+                        <tr>
+                            <td>Jump</td>
+                            <td><span class="kbd-badge">W</span> (Up)</td>
+                            <td><span class="kbd-badge">↑</span></td>
+                            <td>Airborne evasions &amp; jump kicks</td>
+                        </tr>
+                        <tr>
+                            <td>3D Sidestep</td>
+                            <td>Tap <span class="kbd-badge">W</span> or <span class="kbd-badge">S</span> twice</td>
+                            <td>Tap <span class="kbd-badge">↑</span> or <span class="kbd-badge">↓</span> twice</td>
+                            <td>Evades linear attacks into 3rd plane</td>
+                        </tr>
+                        <tr>
+                            <td>Forward / Back Dash</td>
+                            <td>Tap <span class="kbd-badge">D</span>,<span class="kbd-badge">D</span> / <span class="kbd-badge">A</span>,<span class="kbd-badge">A</span></td>
+                            <td>Tap <span class="kbd-badge">→</span>,<span class="kbd-badge">→</span> / <span class="kbd-badge">←</span>,<span class="kbd-badge">←</span></td>
+                            <td>Rapid spacing adjustment</td>
+                        </tr>
+                        <tr>
+                            <td>Button 1 (Left Punch)</td>
+                            <td><span class="kbd-badge">J</span></td>
+                            <td><span class="kbd-badge">Numpad 1</span> or <span class="kbd-badge">7</span></td>
+                            <td>Fast High Jab, plus on block</td>
+                        </tr>
+                        <tr>
+                            <td>Button 2 (Right Punch)</td>
+                            <td><span class="kbd-badge">I</span></td>
+                            <td><span class="kbd-badge">Numpad 2</span> or <span class="kbd-badge">8</span></td>
+                            <td>Mid check, anti-crouch</td>
+                        </tr>
+                        <tr>
+                            <td>Button 3 (Left Kick)</td>
+                            <td><span class="kbd-badge">K</span></td>
+                            <td><span class="kbd-badge">Numpad 4</span> or <span class="kbd-badge">9</span></td>
+                            <td>Low sweep, trips standing guard</td>
+                        </tr>
+                        <tr>
+                            <td>Button 4 (Right Kick)</td>
+                            <td><span class="kbd-badge">O</span> / <span class="kbd-badge">L</span></td>
+                            <td><span class="kbd-badge">Numpad 5</span> or <span class="kbd-badge">0</span></td>
+                            <td>High launcher roundhouse</td>
+                        </tr>
+                        <tr>
+                            <td>df+2 Uppercut Launcher</td>
+                            <td><span class="kbd-badge">S+D + I</span></td>
+                            <td><span class="kbd-badge">↓+→ + Numpad 2</span></td>
+                            <td>Launches opponent into AIR JUGGLE!</td>
+                        </tr>
+                        <tr>
+                            <td>Special Cyber Attack</td>
+                            <td><span class="kbd-badge">U</span></td>
+                            <td><span class="kbd-badge">Numpad 6</span> or <span class="kbd-badge">-</span></td>
+                            <td>Beam blast / projectile / dash rush</td>
+                        </tr>
+                        <tr>
+                            <td>Zero-Day Rage Art</td>
+                            <td><span class="kbd-badge">SPACE</span></td>
+                            <td><span class="kbd-badge">ENTER</span></td>
+                            <td>Devastating Super (HP &lt; 35%)</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 7. VICTORY OVERLAY -->
+        <div id="victory-overlay" class="victory-overlay hidden">
+            <div class="victory-title">VICTORY</div>
+            <img id="victory-sprite" class="victory-winner-img" src="" alt="Winner">
+            <div id="victory-winner-name" style="font-family: 'Orbitron', monospace; font-size: 32px; font-weight: 800; color: #fff;">LUCARIO</div>
+            <div id="victory-winner-title" style="font-size: 16px; color: var(--neon-yellow); margin-top: 4px;">The Aura Firewall</div>
+            <div class="victory-actions">
+                <button id="btn-rematch" class="cyber-btn">REMATCH</button>
+                <button id="btn-victory-menu" class="cyber-btn small">MAIN MENU</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="/static/js/audio.js"></script>
+    <script src="/static/js/characters.js"></script>
+    <script src="/static/js/bot_ai.js"></script>
+    <script src="/static/js/network.js"></script>
+    <script src="/static/js/engine.js"></script>
+    <script src="/static/js/ui.js"></script>
+</body>
+</html>

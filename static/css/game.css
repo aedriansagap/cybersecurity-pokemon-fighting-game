@@ -40,7 +40,7 @@ body {
     left: 0;
     width: 100vw;
     height: 100vh;
-    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.22) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.02), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.02));
+    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.22) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.02), rgba(0, 255, 0, 0.01), rgba(0, 255, 0, 0.02));
     background-size: 100% 3px, 6px 100%;
     pointer-events: none;
     z-index: 999;
@@ -637,6 +637,26 @@ h1.game-logo {
     border-radius: 3px;
     letter-spacing: 1px;
     box-shadow: 0 0 8px rgba(255, 23, 68, 0.5);
+    white-space: nowrap;
+}
+
+.trainer-dept-pill {
+    background: rgba(42, 117, 187, 0.4);
+    border: 1px solid var(--poke-blue);
+    color: #00e5ff;
+    font-family: 'Orbitron', monospace;
+    font-size: 8.5px;
+    font-weight: 700;
+    padding: 1.5px 6px;
+    border-radius: 3px;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+}
+
+.trainer-name-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
 .trainer-name-display {
@@ -646,6 +666,25 @@ h1.game-logo {
     color: #fff;
     text-shadow: 0 0 10px rgba(0, 229, 255, 0.6);
     letter-spacing: 1px;
+}
+
+.trainer-edit-btn {
+    background: transparent;
+    border: 1px solid rgba(0, 229, 255, 0.5);
+    color: #00e5ff;
+    font-family: 'Orbitron', monospace;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.trainer-edit-btn:hover {
+    background: rgba(0, 229, 255, 0.2);
+    box-shadow: 0 0 8px rgba(0, 229, 255, 0.5);
+    transform: translateY(-1px);
 }
 
 .trainer-badges-tray {
@@ -1232,3 +1271,277 @@ h1.game-logo {
     100% { transform: translateX(0); opacity: 1; }
 }
 
+/* ==========================================================================
+   TRAINER PROFILE SETUP MODAL & VS META PILLS
+   ========================================================================== */
+.vs-trainer-meta {
+    display: flex;
+    gap: 6px;
+    margin-top: 4px;
+    flex-wrap: wrap;
+}
+
+.vs-trainer-meta.right-align {
+    justify-content: flex-end;
+}
+
+.vs-meta-pill {
+    font-family: 'Orbitron', monospace;
+    font-size: 8px;
+    font-weight: 800;
+    padding: 2px 7px;
+    border-radius: 3px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    box-shadow: 0 0 6px rgba(0, 0, 0, 0.4);
+    white-space: nowrap;
+}
+
+.vs-dept-pill {
+    background: rgba(42, 117, 187, 0.6);
+    border: 1px solid var(--poke-blue);
+    color: #00e5ff;
+}
+
+.vs-title-pill {
+    background: rgba(255, 203, 5, 0.25);
+    border: 1px solid var(--poke-yellow);
+    color: var(--poke-yellow);
+}
+
+.profile-modal-box {
+    max-width: 520px;
+    background: #08111e;
+    border: 2px solid var(--poke-blue);
+    box-shadow: 0 0 30px rgba(42, 117, 187, 0.5);
+}
+
+.profile-form {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-top: 10px;
+}
+
+.profile-preview-card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: rgba(14, 25, 45, 0.85);
+    border: 1.5px solid var(--poke-yellow);
+    border-radius: 8px;
+    padding: 10px 14px;
+    box-shadow: 0 0 12px rgba(255, 203, 5, 0.25);
+}
+
+.profile-preview-avatar {
+    width: 52px;
+    height: 52px;
+    object-fit: contain;
+    border-radius: 50%;
+    border: 2px solid var(--poke-blue);
+    background: #040810;
+    image-rendering: pixelated;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    text-align: left;
+}
+
+.form-group label {
+    font-family: 'Orbitron', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--neon-yellow);
+    letter-spacing: 0.5px;
+}
+
+.cyber-input {
+    background: #0d1b2a;
+    border: 1.5px solid var(--neon-blue);
+    border-radius: 4px;
+    padding: 9px 12px;
+    color: #fff;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.cyber-input:focus {
+    border-color: var(--poke-yellow);
+    box-shadow: 0 0 10px rgba(255, 203, 5, 0.4);
+}
+
+.cyber-select {
+    background: #0d1b2a;
+    border: 1.5px solid var(--neon-blue);
+    border-radius: 4px;
+    padding: 9px 12px;
+    color: #fff;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    outline: none;
+    cursor: pointer;
+}
+
+.cyber-select:focus {
+    border-color: var(--poke-yellow);
+    box-shadow: 0 0 10px rgba(255, 203, 5, 0.4);
+}
+
+/* ==========================================================================
+   DEDICATED SPECTATOR / STREAMER BROADCAST MODE & ACTION TICKER
+   ========================================================================== */
+#game-container.spectator-mode {
+    border: 3px solid #ff1744;
+    box-shadow: 0 0 35px rgba(255, 23, 68, 0.6), inset 0 0 20px rgba(0, 0, 0, 0.8);
+}
+
+.spectator-watermark {
+    position: absolute;
+    top: 10px;
+    left: 14px;
+    font-family: 'Orbitron', monospace;
+    font-size: 10px;
+    font-weight: 900;
+    color: #fff;
+    background: rgba(238, 21, 21, 0.85);
+    border: 1px solid #ffffff;
+    padding: 4px 10px;
+    border-radius: 4px;
+    letter-spacing: 1.5px;
+    box-shadow: 0 0 15px rgba(238, 21, 21, 0.7);
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    pointer-events: none;
+}
+
+.live-rec-dot {
+    color: #ffea00;
+    animation: liveBlink 0.9s infinite alternate;
+}
+
+@keyframes liveBlink {
+    0% { opacity: 0.2; transform: scale(0.85); }
+    100% { opacity: 1; transform: scale(1.15); }
+}
+
+.combat-ticker-container {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 1000px;
+    height: 28px;
+    background: rgba(5, 10, 20, 0.94);
+    border-top: 1.5px solid var(--poke-blue);
+    display: flex;
+    align-items: center;
+    padding: 0 14px;
+    gap: 12px;
+    z-index: 30;
+    box-sizing: border-box;
+}
+
+.ticker-label {
+    font-family: 'Orbitron', monospace;
+    font-size: 9.5px;
+    font-weight: 900;
+    color: var(--poke-yellow);
+    background: rgba(255, 203, 5, 0.15);
+    border: 1px solid var(--poke-yellow);
+    padding: 2px 6px;
+    border-radius: 3px;
+    white-space: nowrap;
+    letter-spacing: 1px;
+    flex-shrink: 0;
+}
+
+.ticker-content {
+    font-family: 'Orbitron', monospace;
+    font-size: 10px;
+    font-weight: 600;
+    color: #00e5ff;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-shadow: 0 0 6px rgba(0, 229, 255, 0.4);
+    transition: color 0.2s ease;
+}
+
+/* ==========================================================================
+   TEKKEN SLOW-MOTION FINAL HIT REPLAY OVERLAY ("TEKKEN KO CAM")
+   ========================================================================== */
+.replay-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 1000px;
+    height: 600px;
+    z-index: 45;
+    pointer-events: none;
+}
+
+.replay-letterbox-top {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 52px;
+    background: #000000;
+    border-bottom: 2px solid #ff1744;
+    box-shadow: 0 0 15px rgba(255, 23, 68, 0.6);
+}
+
+.replay-letterbox-bottom {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 52px;
+    background: #000000;
+    border-top: 2px solid #ff1744;
+    box-shadow: 0 0 15px rgba(255, 23, 68, 0.6);
+}
+
+.replay-badge-card {
+    position: absolute;
+    top: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: 'Orbitron', monospace;
+    font-size: 14px;
+    font-weight: 900;
+    color: #fff;
+    background: rgba(180, 0, 0, 0.92);
+    border: 2px solid #ffcb05;
+    padding: 6px 20px;
+    border-radius: 6px;
+    letter-spacing: 2px;
+    box-shadow: 0 0 25px rgba(255, 0, 0, 0.8);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    animation: replayPulse 1.2s infinite alternate;
+}
+
+.replay-skip-hint {
+    font-size: 9px;
+    color: #ffcb05;
+    font-weight: 700;
+    letter-spacing: 1px;
+}
+
+@keyframes replayPulse {
+    0% { transform: translateX(-50%) scale(0.97); }
+    100% { transform: translateX(-50%) scale(1.03); }
+}

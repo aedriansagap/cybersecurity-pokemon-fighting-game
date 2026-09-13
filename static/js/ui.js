@@ -4,6 +4,15 @@
  * Online Room Matchmaking, and Victory Podium.
  */
 
+const TRAINERS = [
+    { id: "red", name: "Champion Red", title: "Legendary Champion", sprite: "/static/assets/sprites/trainers/red.png" },
+    { id: "cynthia", name: "Cynthia", title: "Sinnoh Champion", sprite: "/static/assets/sprites/trainers/cynthia.png" },
+    { id: "steven", name: "Steven Stone", title: "Hoenn Champion", sprite: "/static/assets/sprites/trainers/steven.png" },
+    { id: "blue", name: "Blue Oak", title: "Former Champion", sprite: "/static/assets/sprites/trainers/blue.png" },
+    { id: "lance", name: "Lance", title: "Dragon Master", sprite: "/static/assets/sprites/trainers/lance.png" },
+    { id: "n", name: "Natural (N)", title: "Plasma Prodigy", sprite: "/static/assets/sprites/trainers/n.png" }
+];
+
 class UIManager {
     constructor() {
         this.currentScreen = "menu";
@@ -11,15 +20,69 @@ class UIManager {
         this.selectedP2Char = "gengar";
         this.selectedMode = "pve_bot";
         this.selectedDifficulty = "apt_hacker";
+        this.selectedTrainer = localStorage.getItem("cybermon_trainer") || "red";
+        this.onlineOpponentTrainer = "cynthia";
         this.activeTrivia = null;
         this.triviaTimer = null;
         this.triviaTimeLeft = 10;
     }
 
     init() {
+        this.initTrainers();
+        this.updateTrainerCard();
         this.bindEvents();
         this.renderCharacterGrid();
         this.updateCharacterPreview();
+        this.bindHoverSounds();
+    }
+
+    initTrainers() {
+        const grid = document.getElementById("trainer-avatar-grid");
+        if (!grid) return;
+        grid.innerHTML = "";
+
+        TRAINERS.forEach(t => {
+            const card = document.createElement("div");
+            card.className = `trainer-avatar-card ${t.id === this.selectedTrainer ? 'active' : ''}`;
+            card.dataset.trainerId = t.id;
+            card.innerHTML = `
+                <img src="${t.sprite}" class="trainer-card-sprite" alt="${t.name}">
+                <div class="trainer-card-name">${t.name}</div>
+                <div class="trainer-card-title">${t.title}</div>
+            `;
+            card.addEventListener("click", () => {
+                this.selectedTrainer = t.id;
+                localStorage.setItem("cybermon_trainer", t.id);
+                document.querySelectorAll(".trainer-avatar-card").forEach(c => c.classList.remove("active"));
+                card.classList.add("active");
+                this.updateTrainerCard();
+                if (window.soundEngine) {
+                    window.soundEngine.playMenuSelect();
+                }
+            });
+            grid.appendChild(card);
+        });
+    }
+
+    updateTrainerCard() {
+        const trainer = TRAINERS.find(t => t.id === this.selectedTrainer) || TRAINERS[0];
+        const menuAvatar = document.getElementById("menu-trainer-avatar");
+        const menuName = document.getElementById("menu-trainer-name");
+        const activeName = document.getElementById("active-trainer-name");
+
+        if (menuAvatar) menuAvatar.src = trainer.sprite;
+        if (menuName) menuName.textContent = trainer.name.toUpperCase();
+        if (activeName) activeName.textContent = trainer.name.toUpperCase();
+    }
+
+    bindHoverSounds() {
+        document.querySelectorAll(".cyber-btn, .char-card, .trainer-avatar-card").forEach(el => {
+            el.addEventListener("mouseenter", () => {
+                if (window.soundEngine && window.soundEngine.ctx) {
+                    window.soundEngine.playUiBeep(440);
+                }
+            });
+        });
     }
 
     bindEvents() {
@@ -210,10 +273,6 @@ class UIManager {
     }
 
     startCombat() {
-        this.showScreen("battle");
-        const canvas = document.getElementById("game-canvas");
-        window.gameEngine.init(canvas);
-
         // Pick opponent character
         if (this.selectedMode === "pve_bot") {
             const rosterKeys = Object.keys(CHARACTERS).filter(k => k !== this.selectedP1Char);
@@ -223,6 +282,67 @@ class UIManager {
             this.selectedP2Char = this.selectedP2Char || "gengar";
         }
 
+        // Determine P1 & P2 Trainer details
+        const p1Trainer = TRAINERS.find(t => t.id === this.selectedTrainer) || TRAINERS[0];
+        let p2Trainer;
+        if (this.selectedMode === "pvp_online") {
+            p2Trainer = TRAINERS.find(t => t.id === this.onlineOpponentTrainer) || TRAINERS[1];
+        } else {
+            const availableTrainers = TRAINERS.filter(t => t.id !== this.selectedTrainer);
+            p2Trainer = availableTrainers[Math.floor(Math.random() * availableTrainers.length)] || TRAINERS[1];
+        }
+
+        const char1 = CHARACTERS[this.selectedP1Char];
+        const char2 = CHARACTERS[this.selectedP2Char];
+
+        // Trigger VS Matchup Splash Screen
+        const splash = document.getElementById("vs-splash");
+        if (splash && char1 && char2) {
+            document.getElementById("vs-p1-trainer-img").src = p1Trainer.sprite;
+            document.getElementById("vs-p1-trainer-name").textContent = p1Trainer.name.toUpperCase();
+            document.getElementById("vs-p1-pokemon-img").src = char1.spriteFront;
+            document.getElementById("vs-p1-pokemon-name").textContent = char1.name;
+            document.getElementById("vs-p1-pokemon-title").textContent = char1.title.toUpperCase();
+
+            document.getElementById("vs-p2-trainer-img").src = p2Trainer.sprite;
+            document.getElementById("vs-p2-trainer-name").textContent = p2Trainer.name.toUpperCase();
+            document.getElementById("vs-p2-pokemon-img").src = char2.spriteFront;
+            document.getElementById("vs-p2-pokemon-name").textContent = char2.name;
+            document.getElementById("vs-p2-pokemon-title").textContent = char2.title.toUpperCase();
+
+            const p2RoleTag = document.getElementById("vs-p2-role-tag");
+            if (p2RoleTag) {
+                if (this.selectedMode === "pve_bot") {
+                    p2RoleTag.textContent = `BOT (${this.selectedDifficulty.replace(/_/g, ' ').toUpperCase()})`;
+                } else if (this.selectedMode === "pvp_local") {
+                    p2RoleTag.textContent = "PLAYER 2 (LOCAL)";
+                } else {
+                    p2RoleTag.textContent = "ONLINE OPPONENT";
+                }
+            }
+
+            splash.classList.remove("hidden");
+
+            if (window.soundEngine) {
+                window.soundEngine.init();
+                window.soundEngine.playPokeballOpen();
+                window.soundEngine.playCry(this.selectedP1Char);
+                window.soundEngine.announce("BATTLE BEGIN! 3, 2, 1, FIGHT!", 0.85, 1.1);
+            }
+
+            setTimeout(() => {
+                splash.classList.add("hidden");
+                this.launchBattleEngine();
+            }, 1250);
+        } else {
+            this.launchBattleEngine();
+        }
+    }
+
+    launchBattleEngine() {
+        this.showScreen("battle");
+        const canvas = document.getElementById("game-canvas");
+        window.gameEngine.init(canvas);
         window.gameEngine.startMatch(
             this.selectedP1Char,
             this.selectedP2Char,
@@ -237,6 +357,14 @@ class UIManager {
             roomId,
             (welcomeData) => {
                 document.getElementById("online-status").textContent = `Connected as ${welcomeData.role.toUpperCase()}! Waiting for opponent...`;
+
+                // Broadcast trainer selection
+                window.networkManager.send({
+                    type: "trainer_select",
+                    trainer: this.selectedTrainer,
+                    char: this.selectedP1Char
+                });
+
                 if (welcomeData.p1_connected && welcomeData.p2_connected) {
                     document.getElementById("online-status").textContent = "Both fighters ready! Starting match...";
                     setTimeout(() => {
@@ -250,7 +378,12 @@ class UIManager {
                     this.selectedMode = "pvp_online";
                     this.selectedP1Char = msg.p1_char;
                     this.selectedP2Char = msg.p2_char;
+                    if (msg.p2_trainer) this.onlineOpponentTrainer = msg.p2_trainer;
                     this.startCombat();
+                } else if (msg.type === "trainer_select") {
+                    if (msg.trainer) {
+                        this.onlineOpponentTrainer = msg.trainer;
+                    }
                 } else if (msg.type === "input" && window.gameEngine.p2) {
                     // Sync online inputs
                     const ins = msg.inputs;

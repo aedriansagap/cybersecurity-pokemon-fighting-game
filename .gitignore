@@ -4,3 +4,4 @@ __pycache__/
 .pytest_cache/
 .DS_Store
 static/assets/audio/
+static/assets/sprites/*_mega_*.gif

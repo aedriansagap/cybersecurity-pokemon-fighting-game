@@ -8,8 +8,8 @@ if [ -d ".venv" ]; then
     source .venv/bin/activate
 fi
 
-if [ ! -f "static/assets/sprites/lucario_front.gif" ]; then
-    echo "Downloading Pokémon sprites..."
+if [ ! -f "static/assets/sprites/lucario_front.gif" ] || [ ! -f "static/assets/sprites/lucario_mega_front.gif" ]; then
+    echo "Downloading Pokémon and Mega Evolution sprites..."
     python3 download_sprites.py
 fi
 

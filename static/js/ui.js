@@ -13,6 +13,32 @@ const TRAINERS = [
     { id: "n", name: "Natural (N)", title: "Plasma Prodigy", sprite: "/static/assets/sprites/trainers/n.png" }
 ];
 
+const CYBER_DEPARTMENTS = [
+    "SOC Incident Response",
+    "Red Team / Pentesting",
+    "Blue Team / Defense",
+    "DevSecOps & Cloud Security",
+    "Threat Intelligence & Hunting",
+    "Cryptography & Identity",
+    "Compliance & Governance",
+    "Security Architecture"
+];
+
+const CYBER_TITLES = [
+    "Zero-Day Hunter",
+    "Buffer Overflow Specialist",
+    "Firewall Architect",
+    "Phishing Bait",
+    "SOC Night Owl",
+    "Kubernetes Wrangler",
+    "Malware Reverse Engineer",
+    "SIEM Query Overlord",
+    "Patch Tuesday Survivor",
+    "Root Access Baron",
+    "Cyber Elite Four",
+    "Penetration Test Lead"
+];
+
 class UIManager {
     constructor() {
         this.currentScreen = "menu";
@@ -21,7 +47,14 @@ class UIManager {
         this.selectedMode = "pve_bot";
         this.selectedDifficulty = "apt_hacker";
         this.selectedTrainer = localStorage.getItem("cybermon_trainer") || "red";
+        this.trainerHandle = localStorage.getItem("cybermon_handle") || "Champion Red";
+        this.trainerDept = localStorage.getItem("cybermon_dept") || "SOC Incident Response";
+        this.trainerTitle = localStorage.getItem("cybermon_title") || "Zero-Day Hunter";
+        this.spectatorMode = localStorage.getItem("cybermon_spectator") === "true";
         this.onlineOpponentTrainer = "cynthia";
+        this.onlineOpponentHandle = "Cynthia";
+        this.onlineOpponentDept = "Red Team / Pentesting";
+        this.onlineOpponentTitle = "Buffer Overflow Specialist";
         this.activeTrivia = null;
         this.triviaTimer = null;
         this.triviaTimeLeft = 10;
@@ -29,7 +62,9 @@ class UIManager {
 
     init() {
         this.initTrainers();
+        this.initProfileModal();
         this.updateTrainerCard();
+        this.applySpectatorModeUI();
         this.bindEvents();
         this.renderCharacterGrid();
         this.updateCharacterPreview();
@@ -64,15 +99,149 @@ class UIManager {
         });
     }
 
+    initProfileModal() {
+        const deptSelect = document.getElementById("select-trainer-dept");
+        const titleSelect = document.getElementById("select-trainer-title");
+        const handleInput = document.getElementById("input-trainer-handle");
+
+        if (deptSelect && deptSelect.options.length === 0) {
+            CYBER_DEPARTMENTS.forEach(d => {
+                const opt = document.createElement("option");
+                opt.value = d;
+                opt.textContent = d;
+                if (d === this.trainerDept) opt.selected = true;
+                deptSelect.appendChild(opt);
+            });
+        }
+
+        if (titleSelect && titleSelect.options.length === 0) {
+            CYBER_TITLES.forEach(t => {
+                const opt = document.createElement("option");
+                opt.value = t;
+                opt.textContent = t;
+                if (t === this.trainerTitle) opt.selected = true;
+                titleSelect.appendChild(opt);
+            });
+        }
+
+        if (handleInput) {
+            handleInput.value = this.trainerHandle;
+            handleInput.addEventListener("input", () => this.updateProfileModalPreview());
+        }
+        if (deptSelect) {
+            deptSelect.addEventListener("change", () => this.updateProfileModalPreview());
+        }
+        if (titleSelect) {
+            titleSelect.addEventListener("change", () => this.updateProfileModalPreview());
+        }
+
+        const btnSave = document.getElementById("btn-save-profile");
+        if (btnSave) {
+            btnSave.addEventListener("click", () => {
+                const val = (handleInput.value || "").trim();
+                this.trainerHandle = val || "Trainer";
+                this.trainerDept = deptSelect.value;
+                this.trainerTitle = titleSelect.value;
+
+                localStorage.setItem("cybermon_handle", this.trainerHandle);
+                localStorage.setItem("cybermon_dept", this.trainerDept);
+                localStorage.setItem("cybermon_title", this.trainerTitle);
+
+                this.updateTrainerCard();
+                document.getElementById("profile-modal").classList.add("hidden");
+                if (window.soundEngine) window.soundEngine.playUiBeep(660);
+            });
+        }
+
+        const btnOpen = document.getElementById("btn-edit-profile");
+        if (btnOpen) {
+            btnOpen.addEventListener("click", () => {
+                handleInput.value = this.trainerHandle;
+                deptSelect.value = this.trainerDept;
+                titleSelect.value = this.trainerTitle;
+                this.updateProfileModalPreview();
+                document.getElementById("profile-modal").classList.remove("hidden");
+                if (window.soundEngine) window.soundEngine.playUiBeep(440);
+            });
+        }
+
+        const btnClose = document.getElementById("btn-close-profile");
+        if (btnClose) {
+            btnClose.addEventListener("click", () => {
+                document.getElementById("profile-modal").classList.add("hidden");
+            });
+        }
+    }
+
+    updateProfileModalPreview() {
+        const trainer = TRAINERS.find(t => t.id === this.selectedTrainer) || TRAINERS[0];
+        const prevAvatar = document.getElementById("profile-preview-avatar");
+        const prevHandle = document.getElementById("profile-preview-handle");
+        const prevDept = document.getElementById("profile-preview-dept");
+        const prevTitle = document.getElementById("profile-preview-title");
+        const handleInput = document.getElementById("input-trainer-handle");
+        const deptSelect = document.getElementById("select-trainer-dept");
+        const titleSelect = document.getElementById("select-trainer-title");
+
+        if (prevAvatar) prevAvatar.src = trainer.sprite;
+        if (prevHandle) prevHandle.textContent = (handleInput && handleInput.value.trim()) ? handleInput.value.trim().toUpperCase() : trainer.name.toUpperCase();
+        if (prevDept && deptSelect) prevDept.textContent = deptSelect.value.toUpperCase();
+        if (prevTitle && titleSelect) prevTitle.textContent = titleSelect.value.toUpperCase();
+    }
+
     updateTrainerCard() {
         const trainer = TRAINERS.find(t => t.id === this.selectedTrainer) || TRAINERS[0];
         const menuAvatar = document.getElementById("menu-trainer-avatar");
         const menuName = document.getElementById("menu-trainer-name");
+        const menuDept = document.getElementById("menu-trainer-dept");
+        const menuTitle = document.getElementById("menu-trainer-title");
         const activeName = document.getElementById("active-trainer-name");
 
         if (menuAvatar) menuAvatar.src = trainer.sprite;
-        if (menuName) menuName.textContent = trainer.name.toUpperCase();
-        if (activeName) activeName.textContent = trainer.name.toUpperCase();
+        if (menuName) menuName.textContent = this.trainerHandle ? this.trainerHandle.toUpperCase() : trainer.name.toUpperCase();
+        if (menuDept) menuDept.textContent = this.trainerDept.toUpperCase();
+        if (menuTitle) menuTitle.textContent = this.trainerTitle.toUpperCase();
+        if (activeName) activeName.textContent = this.trainerHandle ? this.trainerHandle.toUpperCase() : trainer.name.toUpperCase();
+    }
+
+    toggleSpectatorMode() {
+        this.spectatorMode = !this.spectatorMode;
+        localStorage.setItem("cybermon_spectator", this.spectatorMode);
+        this.applySpectatorModeUI();
+        if (window.soundEngine) {
+            window.soundEngine.playUiBeep(this.spectatorMode ? 720 : 360);
+        }
+        if (window.gameEngine) {
+            window.gameEngine.logCombatEvent(
+                "SYS",
+                this.spectatorMode ? "BROADCAST SPECTATOR MODE ACTIVATED (1080P/4K VIEW)" : "STANDARD COMBAT VIEW RESTORED"
+            );
+        }
+    }
+
+    applySpectatorModeUI() {
+        const container = document.getElementById("game-container");
+        const watermark = document.getElementById("spectator-watermark");
+        const btnLabel = document.getElementById("spectator-btn-label");
+        const battleBtn = document.getElementById("btn-battle-spectator");
+
+        if (this.spectatorMode) {
+            if (container) container.classList.add("spectator-mode");
+            if (watermark) watermark.classList.remove("hidden");
+            if (btnLabel) btnLabel.textContent = "SPECTATOR / BROADCAST MODE: ON";
+            if (battleBtn) {
+                battleBtn.style.background = "rgba(238, 21, 21, 0.9)";
+                battleBtn.querySelector("span").textContent = "📺 SPECTATOR: ON";
+            }
+        } else {
+            if (container) container.classList.remove("spectator-mode");
+            if (watermark) watermark.classList.add("hidden");
+            if (btnLabel) btnLabel.textContent = "SPECTATOR / BROADCAST MODE: OFF";
+            if (battleBtn) {
+                battleBtn.style.background = "rgba(13, 27, 42, 0.9)";
+                battleBtn.querySelector("span").textContent = "📺 SPECTATOR VIEW";
+            }
+        }
     }
 
     bindHoverSounds() {
@@ -176,6 +345,24 @@ class UIManager {
         // Incident Response Trivia Button in HUD / Menu
         document.getElementById("btn-trigger-trivia").addEventListener("click", () => {
             this.triggerCyberTrivia();
+        });
+
+        // Spectator Mode Toggles
+        const btnSpec = document.getElementById("btn-spectator-toggle");
+        if (btnSpec) {
+            btnSpec.addEventListener("click", () => this.toggleSpectatorMode());
+        }
+
+        const btnBattleSpec = document.getElementById("btn-battle-spectator");
+        if (btnBattleSpec) {
+            btnBattleSpec.addEventListener("click", () => this.toggleSpectatorMode());
+        }
+
+        window.addEventListener("keydown", (e) => {
+            if (e.code === "F2") {
+                e.preventDefault();
+                this.toggleSpectatorMode();
+            }
         });
 
         // Controls Modal Toggle
@@ -298,14 +485,39 @@ class UIManager {
         // Trigger VS Matchup Splash Screen
         const splash = document.getElementById("vs-splash");
         if (splash && char1 && char2) {
-            document.getElementById("vs-p1-trainer-img").src = p1Trainer.sprite;
-            document.getElementById("vs-p1-trainer-name").textContent = p1Trainer.name.toUpperCase();
+            const p1Handle = (this.trainerHandle || p1Trainer.name).toUpperCase();
+            document.getElementById("vs-p1-trainer-name").textContent = p1Handle;
+            const p1Dept = document.getElementById("vs-p1-dept");
+            const p1Title = document.getElementById("vs-p1-title");
+            if (p1Dept) p1Dept.textContent = (this.trainerDept || "SOC INCIDENT RESPONSE").toUpperCase();
+            if (p1Title) p1Title.textContent = (this.trainerTitle || "ZERO-DAY HUNTER").toUpperCase();
             document.getElementById("vs-p1-pokemon-img").src = char1.spriteFront;
             document.getElementById("vs-p1-pokemon-name").textContent = char1.name;
             document.getElementById("vs-p1-pokemon-title").textContent = char1.title.toUpperCase();
 
+            let p2Handle = p2Trainer.name.toUpperCase();
+            let p2DeptText = "RED TEAM PENTEST";
+            let p2TitleText = "THREAT ACTOR";
+            if (this.selectedMode === "pvp_online") {
+                p2Handle = (this.onlineOpponentHandle || p2Trainer.name).toUpperCase();
+                p2DeptText = (this.onlineOpponentDept || "BLUE TEAM INCIDENT RESPONSE").toUpperCase();
+                p2TitleText = (this.onlineOpponentTitle || "ZERO-DAY HUNTER").toUpperCase();
+            } else if (this.selectedMode === "pve_bot") {
+                p2Handle = `${p2Trainer.name} (AI)`.toUpperCase();
+                p2DeptText = "THREAT SIMULATION LAB";
+                p2TitleText = this.selectedDifficulty.replace(/_/g, ' ').toUpperCase();
+            } else if (this.selectedMode === "pvp_local") {
+                p2Handle = "PLAYER 2 (LOCAL)";
+                p2DeptText = "INTERNAL CHALLENGER";
+                p2TitleText = "RIVAL TRAINER";
+            }
+
             document.getElementById("vs-p2-trainer-img").src = p2Trainer.sprite;
-            document.getElementById("vs-p2-trainer-name").textContent = p2Trainer.name.toUpperCase();
+            document.getElementById("vs-p2-trainer-name").textContent = p2Handle;
+            const p2Dept = document.getElementById("vs-p2-dept");
+            const p2Title = document.getElementById("vs-p2-title");
+            if (p2Dept) p2Dept.textContent = p2DeptText;
+            if (p2Title) p2Title.textContent = p2TitleText;
             document.getElementById("vs-p2-pokemon-img").src = char2.spriteFront;
             document.getElementById("vs-p2-pokemon-name").textContent = char2.name;
             document.getElementById("vs-p2-pokemon-title").textContent = char2.title.toUpperCase();
@@ -362,7 +574,10 @@ class UIManager {
                 window.networkManager.send({
                     type: "trainer_select",
                     trainer: this.selectedTrainer,
-                    char: this.selectedP1Char
+                    char: this.selectedP1Char,
+                    handle: this.trainerHandle,
+                    dept: this.trainerDept,
+                    title: this.trainerTitle
                 });
 
                 if (welcomeData.p1_connected && welcomeData.p2_connected) {
@@ -379,11 +594,15 @@ class UIManager {
                     this.selectedP1Char = msg.p1_char;
                     this.selectedP2Char = msg.p2_char;
                     if (msg.p2_trainer) this.onlineOpponentTrainer = msg.p2_trainer;
+                    if (msg.p2_handle) this.onlineOpponentHandle = msg.p2_handle;
+                    if (msg.p2_dept) this.onlineOpponentDept = msg.p2_dept;
+                    if (msg.p2_title) this.onlineOpponentTitle = msg.p2_title;
                     this.startCombat();
                 } else if (msg.type === "trainer_select") {
-                    if (msg.trainer) {
-                        this.onlineOpponentTrainer = msg.trainer;
-                    }
+                    if (msg.trainer) this.onlineOpponentTrainer = msg.trainer;
+                    if (msg.handle) this.onlineOpponentHandle = msg.handle;
+                    if (msg.dept) this.onlineOpponentDept = msg.dept;
+                    if (msg.title) this.onlineOpponentTitle = msg.title;
                 } else if (msg.type === "input" && window.gameEngine.p2) {
                     // Sync online inputs
                     const ins = msg.inputs;

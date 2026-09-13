@@ -521,6 +521,10 @@ class Fighter {
 
         // Sidestep Evasion Check: If opponent is actively sidestepping in a different Z-plane, linear attack whiffs!
         if (this.opponent.state === "sidestep" && Math.abs(this.opponent.z - this.z) > 0.4) {
+            if (window.soundEngine) window.soundEngine.playCrowdGasp();
+            if (window.gameEngine) {
+                window.gameEngine.logCombatEvent("EVADE", `3D SIDESTEP EVASION! ${this.opponent.charData.name.toUpperCase()} cleanly dodged attack!`);
+            }
             return; // Clean 3D evasion!
         }
 
@@ -597,11 +601,13 @@ class Fighter {
                 this.stateTime = 0;
                 if (window.soundEngine) {
                     window.soundEngine.playBreach();
+                    window.soundEngine.playCrowdOoh();
                     window.soundEngine.announce("SECURITY BREACH!");
                 }
                 if (window.gameEngine) {
                     window.gameEngine.triggerCameraShake(15, 20);
                     window.gameEngine.showBanner("SECURITY BREACH!", "#ff1744");
+                    window.gameEngine.logCombatEvent("BREACH", `SECURITY BREACH! ${this.charData.name.toUpperCase()} Firewall collapsed!`);
                 }
             }
             return;
@@ -625,19 +631,31 @@ class Fighter {
 
         this.hp = Math.max(0, this.hp - damage);
         if (this.hp > 0 && (this.hp / this.maxHp) <= 0.25) {
-            if (window.soundEngine) window.soundEngine.startLowHpAlarm();
+            if (window.soundEngine) {
+                window.soundEngine.startLowHpAlarm();
+                window.soundEngine.setClimaxMode(true);
+            }
+            if (window.gameEngine) {
+                window.gameEngine.logCombatEvent("ALERT", `CRITICAL DANGER ALERT! ${this.charData.name.toUpperCase()} entered low-health threshold!`);
+            }
         }
 
         // Sparks & Sound
         if (window.soundEngine) {
             window.soundEngine.playHit(isLauncher ? "launch" : "heavy", isCounterHit);
-            if (isCounterHit) window.soundEngine.announce("COUNTER HIT!");
+            if (isCounterHit) {
+                window.soundEngine.playCrowdOoh();
+                window.soundEngine.announce("COUNTER HIT!");
+            }
         }
 
         if (window.gameEngine) {
             const sparkColor = isCounterHit ? "#ffff00" : (this.charData.color || "#00e5ff");
             window.gameEngine.spawnSpark(this.x, this.y - 60, sparkColor, isCounterHit ? 30 : 18);
             window.gameEngine.triggerCameraShake(isCounterHit ? 10 : 6, 12);
+            if (isCounterHit) {
+                window.gameEngine.logCombatEvent("COUNTER", `COUNTER HIT! ${attacker ? attacker.charData.name.toUpperCase() : "ATTACKER"} dealt +25% bonus impact!`);
+            }
         }
 
         // Launcher / Air Juggle State
@@ -648,6 +666,15 @@ class Fighter {
             this.vy = launchForce;
             this.vx = (attacker ? attacker.facing : -this.facing) * 3.8;
             this.state = "knockdown";
+
+            if (window.soundEngine) window.soundEngine.playCrowdCheer();
+            if (window.gameEngine) {
+                if (this.juggleHits === 1) {
+                    window.gameEngine.logCombatEvent("LAUNCH", `AIRBORNE LAUNCH! ${attacker ? attacker.charData.name.toUpperCase() : "OPPONENT"} launched into the air!`);
+                } else if (this.juggleHits >= 2) {
+                    window.gameEngine.logCombatEvent("JUGGLE", `AIR JUGGLE x${this.juggleHits}! (${Math.round(damage)} DMG)`);
+                }
+            }
         } else {
             this.state = "hitstun";
             this.stateTime = 0;
@@ -702,6 +729,16 @@ class GameEngine {
         this.bannerColor = "#00e5ff";
         this.bannerTime = 0;
 
+        // Frame History & Slow-Mo Replay ("Tekken KO Cam")
+        this.frameHistory = [];
+        this.isReplaying = false;
+        this.replayBuffer = [];
+        this.replayIndex = 0;
+        this.replayTick = 0;
+        this.replayWinner = null;
+        this.replayLoser = null;
+        this.onReplayComplete = null;
+
         // Keyboard State
         this.keys = {};
     }
@@ -715,6 +752,11 @@ class GameEngine {
 
     setupKeyboard() {
         window.addEventListener('keydown', (e) => {
+            if (this.isReplaying && (e.code === "Space" || e.code === "Enter")) {
+                e.preventDefault();
+                this.stopSlowMoReplay();
+                return;
+            }
             if (["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.code)) {
                 e.preventDefault();
             }
@@ -874,8 +916,10 @@ class GameEngine {
 
         this.showBanner(`ROUND ${this.round}... FIGHT!`, "#00e5ff", 100);
         if (window.soundEngine) {
+            window.soundEngine.setClimaxMode(false);
             window.soundEngine.announce(`Round ${this.round}. Fight!`);
         }
+        this.logCombatEvent("ROUND", `ROUND ${this.round}... FIGHT!`);
     }
 
     handleKO(winner, loser) {
@@ -886,26 +930,43 @@ class GameEngine {
         if (winner === this.p1) this.p1Wins++;
         else if (winner === this.p2) this.p2Wins++;
 
+        const isMatchDecider = (this.p1Wins >= 2 || this.p2Wins >= 2);
+
         if (window.soundEngine) {
             window.soundEngine.stopLowHpAlarm();
+            window.soundEngine.setClimaxMode(false);
             if (loser) window.soundEngine.playCry(loser.charData.id, 0.9);
             window.soundEngine.playFaint();
+            window.soundEngine.playCrowdRoar();
             window.soundEngine.announce("K.O.!");
         }
         this.showBanner("K.O.!", "#ee1515", 120);
+        this.logCombatEvent("KO", `K.O.! ${winner.charData.name.toUpperCase()} delivered the finishing blow!`);
 
-        setTimeout(() => {
+        const proceedAfterKO = () => {
             if (this.p1Wins >= 2 || this.p2Wins >= 2) {
                 this.matchOver = true;
                 const victor = this.p1Wins >= 2 ? this.p1 : this.p2;
                 this.showBanner(`${victor.charData.name.toUpperCase()} WINS!`, "#00e676", 200);
-                if (window.soundEngine) window.soundEngine.announce(`${victor.charData.name} wins!`);
+                this.logCombatEvent("VICTORY", `🏆 MATCH CONCLUDED // ${victor.charData.name.toUpperCase()} WINS CYBER CHAMPIONSHIP!`);
+                if (window.soundEngine) {
+                    window.soundEngine.playVictory();
+                    window.soundEngine.announce(`${victor.charData.name} wins!`);
+                }
                 if (window.uiManager) window.uiManager.showVictoryScreen(victor);
             } else {
                 this.round++;
                 this.startRound();
             }
-        }, 2200);
+        };
+
+        if (isMatchDecider) {
+            setTimeout(() => {
+                this.startSlowMoReplay(winner, loser, proceedAfterKO);
+            }, 900);
+        } else {
+            setTimeout(proceedAfterKO, 2200);
+        }
     }
 
     handleTimeOut() {
@@ -1133,6 +1194,22 @@ class GameEngine {
     gameLoop() {
         if (!this.running) return;
 
+        // Slow-Motion Final Hit Replay Loop (0.25x speed)
+        if (this.isReplaying) {
+            this.replayTick++;
+            if (this.replayTick >= 4) {
+                this.replayTick = 0;
+                this.replayIndex++;
+                if (this.replayIndex >= this.replayBuffer.length) {
+                    this.stopSlowMoReplay();
+                    return;
+                }
+            }
+            this.renderReplayFrame();
+            requestAnimationFrame(() => this.gameLoop());
+            return;
+        }
+
         // Hit-stop impact freeze (gives heavy Tekken combat crunch)
         if (this.hitStopFrames > 0) {
             this.hitStopFrames--;
@@ -1152,6 +1229,9 @@ class GameEngine {
         }
 
         this.frame++;
+
+        // Record snapshot for instant replay ring buffer
+        this.recordFrameSnapshot();
 
         // Update Bot AI
         if (this.botAI) {
@@ -1890,6 +1970,223 @@ class GameEngine {
         ctx.shadowColor = this.bannerColor;
         ctx.shadowBlur = 20;
         ctx.fillText(this.bannerText, w / 2, h / 2 + 18);
+        ctx.restore();
+    }
+
+    // --- COMBAT EVENT TICKER & BROADCAST FEED ---
+    logCombatEvent(type, message) {
+        const tickerEl = document.getElementById("combat-ticker-text");
+        if (!tickerEl) return;
+        const now = new Date();
+        const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+        tickerEl.textContent = `[${timeStr}] [${type}] ${message}`;
+        tickerEl.style.color = (type === "REPLAY" || type === "KO") ? "#ff1744" : ((type === "COUNTER" || type === "LAUNCH") ? "#ffcb05" : "#00e5ff");
+    }
+
+    // --- SLOW-MOTION FINAL HIT REPLAY ("TEKKEN KO CAM") ---
+    cloneFighterSnapshot(f) {
+        if (!f) return null;
+        let activeSprite;
+        if (f.isTransformed) {
+            activeSprite = (f.facing === 1) ? f.megaFrontImg : f.megaBackImg;
+        } else {
+            activeSprite = (f.facing === 1) ? f.spriteFrontImg : f.spriteBackImg;
+        }
+
+        return {
+            x: f.x,
+            y: f.y,
+            z: f.z,
+            baseY: f.baseY,
+            facing: f.facing,
+            state: f.state,
+            hp: f.hp,
+            maxHp: f.maxHp,
+            firewall: f.firewall,
+            maxFirewall: f.maxFirewall,
+            inRage: f.inRage,
+            isTransformed: f.isTransformed,
+            hitFlashFrames: f.hitFlashFrames,
+            animOffsetX: f.animOffsetX,
+            animOffsetY: f.animOffsetY,
+            animScaleX: f.animScaleX,
+            animScaleY: f.animScaleY,
+            animTilt: f.animTilt,
+            charData: f.charData,
+            sprite: activeSprite
+        };
+    }
+
+    recordFrameSnapshot() {
+        if (this.isReplaying || !this.p1 || !this.p2) return;
+        if (this.frameHistory.length >= 75) {
+            this.frameHistory.shift();
+        }
+        this.frameHistory.push({
+            p1: this.cloneFighterSnapshot(this.p1),
+            p2: this.cloneFighterSnapshot(this.p2),
+            camX: this.camX,
+            camY: this.camY,
+            camZoom: this.camZoom,
+            shakeIntensity: this.shakeIntensity,
+            roundTime: this.roundTime,
+            bannerText: this.bannerText,
+            bannerColor: this.bannerColor,
+            attackVFX: this.attackVFX.map(v => ({ ...v })),
+            sparks: this.sparks.map(s => ({ ...s }))
+        });
+    }
+
+    startSlowMoReplay(winner, loser, onComplete) {
+        if (this.frameHistory.length < 15) {
+            if (onComplete) onComplete();
+            return;
+        }
+
+        this.isReplaying = true;
+        this.replayWinner = winner;
+        this.replayLoser = loser;
+        this.onReplayComplete = onComplete;
+
+        // Extract the last 50 frames leading up to the final blow
+        this.replayBuffer = this.frameHistory.slice(-50);
+        this.replayIndex = 0;
+        this.replayTick = 0;
+
+        const overlay = document.getElementById("replay-overlay");
+        if (overlay) overlay.classList.remove("hidden");
+
+        this.logCombatEvent("REPLAY", `⏪ SLOW-MOTION FINISH REPLAY (0.25x SPEED) // ${winner.charData.name.toUpperCase()} FINISHING IMPACT`);
+    }
+
+    stopSlowMoReplay() {
+        if (!this.isReplaying) return;
+        this.isReplaying = false;
+        const overlay = document.getElementById("replay-overlay");
+        if (overlay) overlay.classList.add("hidden");
+
+        if (this.onReplayComplete) {
+            const cb = this.onReplayComplete;
+            this.onReplayComplete = null;
+            cb();
+        }
+    }
+
+    renderReplayFrame() {
+        const frameData = this.replayBuffer[this.replayIndex];
+        if (!frameData) return;
+
+        const ctx = this.ctx;
+        const w = this.canvas.width;
+        const h = this.canvas.height;
+
+        ctx.save();
+        ctx.clearRect(0, 0, w, h);
+
+        // Zoom in tighter on the finishing blow impact (1.32x zoom)
+        const zoom = (frameData.camZoom || 1.0) * 1.32;
+        const camX = frameData.camX || 0;
+
+        ctx.translate(w / 2, h / 2);
+        ctx.scale(zoom, zoom);
+        ctx.translate(-w / 2 - camX, -h / 2);
+
+        // 1. Stage
+        this.renderStage(ctx, w, h);
+
+        // 2. Shadows
+        if (frameData.p1) this.renderSnapshotShadow(ctx, frameData.p1);
+        if (frameData.p2) this.renderSnapshotShadow(ctx, frameData.p2);
+
+        // 3. Fighters
+        const fighters = [frameData.p1, frameData.p2].filter(Boolean).sort((a, b) => a.z - b.z);
+        for (const f of fighters) {
+            this.renderSnapshotFighter(ctx, f);
+        }
+
+        // 4. VFX & Sparks
+        if (frameData.attackVFX) {
+            this.attackVFX = frameData.attackVFX;
+            this.renderAttackVFX(ctx);
+        }
+        if (frameData.sparks) {
+            for (const s of frameData.sparks) {
+                ctx.save();
+                ctx.fillStyle = s.color;
+                ctx.shadowColor = s.color;
+                ctx.shadowBlur = 10;
+                ctx.beginPath();
+                ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        ctx.restore();
+
+        // 5. Cinematic Replay Vignette
+        ctx.save();
+        const vignette = ctx.createRadialGradient(w / 2, h / 2, w * 0.3, w / 2, h / 2, w * 0.72);
+        vignette.addColorStop(0, "rgba(0, 0, 0, 0)");
+        vignette.addColorStop(1, "rgba(0, 0, 0, 0.45)");
+        ctx.fillStyle = vignette;
+        ctx.fillRect(0, 0, w, h);
+        ctx.restore();
+
+        // 6. Static HUD
+        this.renderHUD(ctx, w, h);
+    }
+
+    renderSnapshotShadow(ctx, f) {
+        const shadowScale = 1.0 + f.z * 0.15;
+        const shadowAlpha = Math.max(0.2, 0.6 - (f.baseY - f.y) / 250);
+        ctx.save();
+        ctx.fillStyle = `rgba(0, 0, 0, ${shadowAlpha})`;
+        ctx.beginPath();
+        ctx.ellipse(f.x, f.baseY + 5 + f.z * 15, 45 * shadowScale, 14 * shadowScale, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+    }
+
+    renderSnapshotFighter(ctx, f) {
+        ctx.save();
+        const depthScale = 1.0 + f.z * 0.12;
+        const renderX = f.x + (f.animOffsetX || 0);
+        const renderY = f.y + f.z * 15 + (f.animOffsetY || 0);
+
+        ctx.translate(renderX, renderY);
+        ctx.scale(f.facing * depthScale * (f.animScaleX || 1.0), depthScale * (f.animScaleY || 1.0));
+
+        if (f.animTilt) {
+            ctx.rotate((f.animTilt * Math.PI) / 180);
+        }
+
+        if (f.isTransformed) {
+            ctx.save();
+            ctx.shadowColor = f.charData.color || "#00e5ff";
+            ctx.shadowBlur = 35;
+            ctx.strokeStyle = "rgba(255, 255, 255, 0.85)";
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.ellipse(0, -f.charData.height * 0.52, f.charData.width * 0.7, f.charData.height * 0.65, 0, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        if (f.hitFlashFrames > 0) {
+            ctx.filter = "brightness(3.5) contrast(2)";
+        }
+
+        const sprite = f.sprite;
+        if (sprite && sprite.complete && sprite.naturalWidth > 0) {
+            const aspect = sprite.naturalWidth / sprite.naturalHeight;
+            const drawH = f.charData.height * 1.15;
+            const drawW = drawH * aspect;
+            ctx.drawImage(sprite, -drawW / 2, -drawH, drawW, drawH);
+        } else {
+            ctx.fillStyle = f.charData.color || "#00e5ff";
+            ctx.fillRect(-f.charData.width / 2, -f.charData.height, f.charData.width, f.charData.height);
+        }
         ctx.restore();
     }
 }

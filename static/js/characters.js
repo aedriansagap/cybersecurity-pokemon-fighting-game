@@ -617,7 +617,6 @@ const CHARACTERS = {
                 hitbox: { x: 45, y: -70, w: 45, h: 30 },
                 sound: "light", vfx: "slash1", animType: "jab", lungeX: 10, tilt: 6
             },
-            // 2: Right Punch (Straight Mid)
             "2": {
                 name: "Combustion Straight",
                 type: "mid",
@@ -632,7 +631,6 @@ const CHARACTERS = {
                 hitbox: { x: 50, y: -65, w: 50, h: 35 },
                 sound: "mid", vfx: "slash2", animType: "cross", lungeX: 15, tilt: 10
             },
-            // 3: Left Kick (Low Sweep)
             "3": {
                 name: "Low Flare Sweep",
                 type: "low",
@@ -647,7 +645,6 @@ const CHARACTERS = {
                 hitbox: { x: 45, y: -25, w: 60, h: 25 },
                 sound: "mid", vfx: "low_arc", animType: "sweep", squashY: 0.8, tilt: -12, lungeX: 12, tilt: 10
             },
-            // 4: Right Kick (High Roundhouse)
             "4": {
                 name: "Sky High Kick",
                 type: "high",
@@ -662,7 +659,6 @@ const CHARACTERS = {
                 hitbox: { x: 55, y: -90, w: 55, h: 45 },
                 sound: "heavy", vfx: "crescent_arc", animType: "kick", lungeX: 18, stretchX: 1.2, tilt: 18
             },
-            // df+2: Classic Tekken Electric Uppercut Launcher
             "df2": {
                 name: "Brave Bird Uppercut",
                 type: "mid",
@@ -680,7 +676,6 @@ const CHARACTERS = {
                 hitbox: { x: 45, y: -90, w: 55, h: 65 },
                 sound: "launch", vfx: "rising_geyser", animType: "launcher", lungeX: 14, stretchY: 1.3, tilt: -15
             },
-            // f,f+2: Dashing Palm Strike
             "ff2": {
                 name: "Blaze Kick Dash",
                 type: "mid",
@@ -696,7 +691,6 @@ const CHARACTERS = {
                 hitbox: { x: 60, y: -65, w: 65, h: 45 },
                 sound: "heavy", vfx: "heavy_burst", animType: "dash_attack", lungeX: 25, stretchX: 1.25, tilt: 18
             },
-            // Special: Aura Sphere Blast
             "special": {
                 name: "Overheat Tornado Drive",
                 type: "mid",

@@ -161,7 +161,7 @@ class SoundEngine {
         osc.frequency.setValueAtTime(880, now);
         osc.frequency.setValueAtTime(1320, now + 0.05);
         osc.frequency.setValueAtTime(1760, now + 0.1);
-        osc.exponentialRampToValueAtTime(110, now + 0.3);
+        osc.frequency.exponentialRampToValueAtTime(110, now + 0.3);
 
         gain.gain.setValueAtTime(0.75, now);
         gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);

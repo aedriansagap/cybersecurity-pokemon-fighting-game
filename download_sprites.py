@@ -55,7 +55,13 @@ for p in POKEMON_LIST:
     download_file(f"https://play.pokemonshowdown.com/sprites/ani-back/{p}.gif", os.path.join(TARGET_DIR, f"{p}_back.gif"), f"{p} (Back)")
     download_file(f"https://play.pokemonshowdown.com/sprites/gen5/{p}.png", os.path.join(TARGET_DIR, f"{p}_icon.png"), f"{p} (Icon)")
 
-# 2. Mega Evolution & Super Form Sprites
+# 2. Shiny & Alternate Sprites for combat variations
+print("\n2. Checking Shiny Sprites for combat variations...")
+for p in POKEMON_LIST:
+    download_file(f"https://play.pokemonshowdown.com/sprites/ani-shiny/{p}.gif", os.path.join(TARGET_DIR, f"{p}_shiny_front.gif"), f"{p} Shiny (Front)")
+    download_file(f"https://play.pokemonshowdown.com/sprites/ani-back-shiny/{p}.gif", os.path.join(TARGET_DIR, f"{p}_shiny_back.gif"), f"{p} Shiny (Back)")
+
+# 3. Mega Evolution & Super Form Sprites
 MEGA_FORMS = [
     ("lucario", "lucario-mega"),
     ("gengar", "gengar-mega"),
@@ -64,17 +70,16 @@ MEGA_FORMS = [
     ("mewtwo", "mewtwo-megax"),
     ("greninja", "greninja-ash"),
     ("pikachu", "pikachu-starter"),
-    ("porygonz", "porygonz")  # Fallback/shiny
+    ("porygonz", "porygonz-shiny")
 ]
 
-print("\n2. Checking Mega Evolution & Super Form Sprites...")
+print("\n3. Checking Mega Evolution & Super Form Sprites...")
 for p, mega_id in MEGA_FORMS:
-    if p == "porygonz":
-        front_url = f"https://play.pokemonshowdown.com/sprites/ani-shiny/{mega_id}.gif"
-        back_url = f"https://play.pokemonshowdown.com/sprites/ani-back-shiny/{mega_id}.gif"
-    else:
-        front_url = f"https://play.pokemonshowdown.com/sprites/ani/{mega_id}.gif"
-        back_url = f"https://play.pokemonshowdown.com/sprites/ani-back/{mega_id}.gif"
+    front_url = f"https://play.pokemonshowdown.com/sprites/ani/{mega_id}.gif"
+    back_url = f"https://play.pokemonshowdown.com/sprites/ani-back/{mega_id}.gif"
+    if mega_id == "porygonz-shiny":
+        front_url = f"https://play.pokemonshowdown.com/sprites/ani-shiny/porygonz.gif"
+        back_url = f"https://play.pokemonshowdown.com/sprites/ani-back-shiny/porygonz.gif"
 
     download_file(front_url, os.path.join(TARGET_DIR, f"{p}_mega_front.gif"), f"{p} Mega (Front)")
     download_file(back_url, os.path.join(TARGET_DIR, f"{p}_mega_back.gif"), f"{p} Mega (Back)")

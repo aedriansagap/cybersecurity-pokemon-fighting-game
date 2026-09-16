@@ -74,22 +74,52 @@ body {
     display: none !important;
 }
 
-/* Pokémon Logo & Header */
+/* Background Pokémon Light Rays Animation */
+.poke-bg-rays {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle at 50% 30%, rgba(42, 117, 187, 0.25) 0%, rgba(6, 12, 22, 0.95) 70%), repeating-conic-gradient(from 0deg at 50% 50%, rgba(255, 203, 5, 0.03) 0deg 15deg, transparent 15deg 30deg);
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* Pokémon Logo & Hero Banner */
+.poke-hero-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 55px;
+    margin-bottom: 15px;
+    z-index: 10;
+}
+
 .poke-logo-wrapper {
     display: flex;
     align-items: center;
-    gap: 16px;
-    margin-bottom: 6px;
+    gap: 18px;
+    margin-bottom: 4px;
 }
 
 .pokeball-badge {
-    width: 48px;
-    height: 48px;
+    width: 52px;
+    height: 52px;
     border-radius: 50%;
     background: linear-gradient(180deg, var(--poke-red) 50%, #ffffff 50%);
-    border: 3.5px solid #111;
+    border: 4px solid #111;
     position: relative;
-    box-shadow: 0 0 16px rgba(238, 21, 21, 0.7);
+    box-shadow: 0 0 20px rgba(238, 21, 21, 0.8), inset 0 0 6px rgba(255, 255, 255, 0.6);
+}
+
+.pokeball-badge.spinning {
+    animation: pokeballRotate 12s linear infinite;
+}
+
+@keyframes pokeballRotate {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
 }
 
 .pokeball-badge::before {
@@ -98,7 +128,7 @@ body {
     top: 50%;
     left: 0;
     width: 100%;
-    height: 4px;
+    height: 5px;
     background: #111;
     transform: translateY(-50%);
 }
@@ -108,33 +138,50 @@ body {
     position: absolute;
     top: 50%;
     left: 50%;
-    width: 14px;
-    height: 14px;
+    width: 16px;
+    height: 16px;
     background: #ffffff;
-    border: 3px solid #111;
+    border: 3.5px solid #111;
     border-radius: 50%;
     transform: translate(-50%, -50%);
-    box-shadow: 0 0 6px #00e5ff;
+    box-shadow: 0 0 8px #00e5ff;
 }
 
 h1.game-logo {
     font-family: 'Orbitron', monospace, sans-serif;
-    font-size: 52px;
+    font-size: 56px;
     font-weight: 900;
     text-transform: uppercase;
-    letter-spacing: 4px;
-    color: var(--poke-yellow);
-    text-shadow: -3px -3px 0 var(--poke-blue), 3px -3px 0 var(--poke-blue), -3px 3px 0 var(--poke-blue), 3px 3px 0 var(--poke-blue), 0 0 25px rgba(255, 203, 5, 0.6);
+    letter-spacing: 5px;
     margin-bottom: 0px;
+    display: flex;
 }
 
-.sub-tagline {
-    font-family: 'Orbitron', monospace;
-    font-size: 13px;
-    letter-spacing: 5px;
+.logo-yellow {
     color: var(--poke-yellow);
-    margin-bottom: 30px;
-    text-shadow: 0 0 10px rgba(255, 203, 5, 0.5);
+    text-shadow: -3px -3px 0 var(--poke-blue), 3px -3px 0 var(--poke-blue), -3px 3px 0 var(--poke-blue), 3px 3px 0 var(--poke-blue), 0 0 30px rgba(255, 203, 5, 0.8);
+}
+
+.logo-blue {
+    color: #00e5ff;
+    text-shadow: -3px -3px 0 var(--poke-blue), 3px -3px 0 var(--poke-blue), -3px 3px 0 var(--poke-blue), 3px 3px 0 var(--poke-blue), 0 0 30px rgba(0, 229, 255, 0.8);
+}
+
+.sub-tagline-badge {
+    background: linear-gradient(90deg, rgba(238, 21, 21, 0.85) 0%, rgba(42, 117, 187, 0.85) 100%);
+    border: 1.5px solid var(--poke-yellow);
+    padding: 4px 16px;
+    border-radius: 20px;
+    font-family: 'Orbitron', monospace;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 2px;
+    color: #ffffff;
+    box-shadow: 0 0 15px rgba(255, 203, 5, 0.4);
+}
+
+.menu-options-container {
+    z-index: 10;
 }
 
 /* Buttons & Menu */
@@ -556,22 +603,60 @@ h1.game-logo {
 }
 
 /* ==========================================================================
-   POKÉMON LEAGUE TRAINER CARD & CYBER GYM BADGES BAR
+   POKÉMON LEAGUE TRAINER PASSPORT CARD
    ========================================================================== */
 .trainer-card-bar {
     position: absolute;
-    top: 14px;
-    width: 930px;
+    top: 12px;
+    width: 940px;
+    display: flex;
+    flex-direction: column;
+    background: linear-gradient(135deg, rgba(22, 38, 66, 0.95) 0%, rgba(10, 20, 38, 0.95) 100%);
+    border: 2px solid var(--poke-blue);
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(42, 117, 187, 0.5), inset 0 0 12px rgba(255, 203, 5, 0.15);
+    backdrop-filter: blur(6px);
+    z-index: 20;
+    overflow: hidden;
+}
+
+.trainer-card-header {
+    background: linear-gradient(90deg, var(--poke-red) 0%, var(--poke-blue) 100%);
+    padding: 3px 12px;
     display: flex;
     align-items: center;
-    background: rgba(10, 20, 36, 0.88);
-    border: 1.5px solid var(--poke-blue);
-    border-radius: 8px;
-    padding: 6px 16px;
+    gap: 8px;
+    border-bottom: 1px solid var(--poke-yellow);
+}
+
+.pokedex-mini-led {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: #00e5ff;
+    border: 1px solid #fff;
+    box-shadow: 0 0 6px #00e5ff;
+    animation: ledPulse 1.5s infinite alternate;
+}
+
+@keyframes ledPulse {
+    0% { opacity: 0.4; }
+    100% { opacity: 1; }
+}
+
+.pokedex-card-title {
+    font-family: 'Orbitron', monospace;
+    font-size: 9.5px;
+    font-weight: 900;
+    color: #ffffff;
+    letter-spacing: 1.5px;
+}
+
+.trainer-card-body {
+    display: flex;
+    align-items: center;
+    padding: 6px 14px;
     gap: 14px;
-    box-shadow: 0 0 15px rgba(42, 117, 187, 0.35), inset 0 0 10px rgba(0, 229, 255, 0.08);
-    backdrop-filter: blur(4px);
-    z-index: 20;
 }
 
 .trainer-avatar-mini-wrapper {
@@ -738,15 +823,26 @@ h1.game-logo {
 }
 
 /* ==========================================================================
-   POKÉMON LEAGUE CAPSULE BUTTONS
+   POKÉMON LEAGUE CAPSULE BUTTONS & MENU STYLING
    ========================================================================== */
+.menu-row-secondary {
+    display: flex;
+    gap: 10px;
+}
+
 .poke-capsule-btn {
     border-radius: 28px !important;
     padding: 11px 22px !important;
-    background: linear-gradient(90deg, rgba(14, 28, 48, 0.9) 0%, rgba(20, 42, 74, 0.9) 100%) !important;
-    border: 1.5px solid var(--poke-blue) !important;
+    background: linear-gradient(90deg, rgba(14, 28, 48, 0.92) 0%, rgba(24, 48, 82, 0.92) 100%) !important;
+    border: 2px solid var(--poke-blue) !important;
     position: relative;
     overflow: hidden;
+}
+
+.poke-capsule-btn.highlight-gold {
+    background: linear-gradient(90deg, rgba(42, 117, 187, 0.95) 0%, rgba(20, 70, 130, 0.95) 100%) !important;
+    border-color: var(--poke-yellow) !important;
+    box-shadow: 0 0 15px rgba(255, 203, 5, 0.4) !important;
 }
 
 .poke-capsule-btn::before {
@@ -795,26 +891,41 @@ h1.game-logo {
 }
 
 /* ==========================================================================
-   UNION ROOM // CYBER BATTLE CLUB LOBBY
+   UNION ROOM // POKÉMON CENTER LOBBY
    ========================================================================== */
-.union-room-header {
-    text-align: center;
-    margin-bottom: 12px;
-}
-
-.union-title-row {
+.union-roof-banner {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 14px;
+    gap: 16px;
+    background: linear-gradient(90deg, var(--poke-red) 0%, #aa0000 50%, var(--poke-red) 100%);
+    border: 2px solid var(--poke-yellow);
+    border-radius: 25px;
+    padding: 6px 24px;
+    box-shadow: 0 0 20px rgba(238, 21, 21, 0.6);
+}
+
+.union-roof-title {
+    font-family: 'Orbitron', monospace;
+    font-size: 22px;
+    font-weight: 900;
+    color: #ffffff;
+    letter-spacing: 2px;
+    text-shadow: 0 0 10px rgba(255, 203, 5, 0.8);
+    margin: 0;
 }
 
 .union-ball-icon {
-    width: 28px;
-    height: 28px;
+    width: 30px;
+    height: 30px;
     object-fit: contain;
     image-rendering: pixelated;
-    filter: drop-shadow(0 0 8px rgba(0, 229, 255, 0.7));
+    filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.8));
+}
+
+.pokedex-frame {
+    border: 2.5px solid var(--poke-blue) !important;
+    box-shadow: 0 0 25px rgba(42, 117, 187, 0.4), inset 0 0 15px rgba(0, 229, 255, 0.08) !important;
 }
 
 .union-room-body {

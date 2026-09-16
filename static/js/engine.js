@@ -74,6 +74,12 @@ class Fighter {
         this.spriteBackImg = new Image();
         this.spriteBackImg.src = this.charData.spriteBack;
 
+        // Shiny / Alt Form Sprites
+        this.shinyFrontImg = new Image();
+        this.shinyFrontImg.src = this.charData.shinySpriteFront || this.charData.spriteFront;
+        this.shinyBackImg = new Image();
+        this.shinyBackImg.src = this.charData.shinySpriteBack || this.charData.spriteBack;
+
         // Mega Evolution & Super Form Sprites
         this.megaFrontImg = new Image();
         this.megaFrontImg.src = this.charData.megaSpriteFront || this.charData.spriteFront;
@@ -1624,12 +1630,17 @@ class GameEngine {
             ctx.filter = "brightness(3.5) contrast(2)";
         }
 
-        // Select Active Sprite (Mega Form vs Standard Form)
+        // Select Active Sprite dynamically based on combat state & orientation
         let sprite;
+        const useBackSprite = (f.side === 1 && f.facing === -1) || (f.side === 2 && f.facing === 1);
+
         if (f.isTransformed) {
-            sprite = (f.facing === 1) ? f.megaFrontImg : f.megaBackImg;
+            sprite = useBackSprite ? f.megaBackImg : f.megaFrontImg;
+        } else if (f.inRage || f.state === "attack") {
+            // When executing heavy attacks or in Rage mode, use shiny/overcharged sprite variation!
+            sprite = useBackSprite ? (f.shinyBackImg.complete ? f.shinyBackImg : f.spriteBackImg) : (f.shinyFrontImg.complete ? f.shinyFrontImg : f.spriteFrontImg);
         } else {
-            sprite = (f.facing === 1) ? f.spriteFrontImg : f.spriteBackImg;
+            sprite = useBackSprite ? f.spriteBackImg : f.spriteFrontImg;
         }
 
         if (sprite && sprite.complete && sprite.naturalWidth > 0) {
@@ -2027,10 +2038,13 @@ class GameEngine {
     cloneFighterSnapshot(f) {
         if (!f) return null;
         let activeSprite;
+        const useBackSprite = (f.side === 1 && f.facing === -1) || (f.side === 2 && f.facing === 1);
         if (f.isTransformed) {
-            activeSprite = (f.facing === 1) ? f.megaFrontImg : f.megaBackImg;
+            activeSprite = useBackSprite ? f.megaBackImg : f.megaFrontImg;
+        } else if (f.inRage || f.state === "attack") {
+            activeSprite = useBackSprite ? (f.shinyBackImg.complete ? f.shinyBackImg : f.spriteBackImg) : (f.shinyFrontImg.complete ? f.shinyFrontImg : f.spriteFrontImg);
         } else {
-            activeSprite = (f.facing === 1) ? f.spriteFrontImg : f.spriteBackImg;
+            activeSprite = useBackSprite ? f.spriteBackImg : f.spriteFrontImg;
         }
 
         return {

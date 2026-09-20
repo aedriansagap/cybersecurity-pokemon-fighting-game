@@ -58,6 +58,15 @@ class UIManager {
         this.activeTrivia = null;
         this.triviaTimer = null;
         this.triviaTimeLeft = 10;
+
+        const savedStats = localStorage.getItem("cybermon_career_stats");
+        this.careerStats = savedStats ? JSON.parse(savedStats) : {
+            matches: 0,
+            wins: 0,
+            losses: 0,
+            streak: 0,
+            bestStreak: 0
+        };
     }
 
     init() {
@@ -196,12 +205,67 @@ class UIManager {
         const menuDept = document.getElementById("menu-trainer-dept");
         const menuTitle = document.getElementById("menu-trainer-title");
         const activeName = document.getElementById("active-trainer-name");
+        const recEl = document.getElementById("menu-trainer-record");
 
         if (menuAvatar) menuAvatar.src = trainer.sprite;
         if (menuName) menuName.textContent = this.trainerHandle ? this.trainerHandle.toUpperCase() : trainer.name.toUpperCase();
         if (menuDept) menuDept.textContent = this.trainerDept.toUpperCase();
         if (menuTitle) menuTitle.textContent = this.trainerTitle.toUpperCase();
         if (activeName) activeName.textContent = this.trainerHandle ? this.trainerHandle.toUpperCase() : trainer.name.toUpperCase();
+        if (recEl) {
+            const winRate = this.careerStats.matches > 0 ? Math.round((this.careerStats.wins / this.careerStats.matches) * 100) : 0;
+            recEl.textContent = `RECORD: ${this.careerStats.wins}W - ${this.careerStats.losses}L (${winRate}%) | STREAK: ${this.careerStats.streak}🔥`;
+        }
+        this.updateBadgeUnlocks();
+    }
+
+    updateBadgeUnlocks() {
+        const badges = document.querySelectorAll(".badge-item");
+        const wins = this.careerStats.wins || 0;
+        const streak = this.careerStats.streak || 0;
+        const thresholds = [1, 3, 5, 8, 12, 16, 20, 25];
+        badges.forEach((b, idx) => {
+            const req = thresholds[idx] || 1;
+            const unlocked = (wins >= req) || (idx === 7 && streak >= 3);
+            if (unlocked) {
+                b.classList.add("unlocked");
+                b.classList.remove("locked");
+            } else {
+                b.classList.remove("unlocked");
+                b.classList.add("locked");
+            }
+        });
+    }
+
+    recordMatchResult(player1Won) {
+        this.careerStats.matches++;
+        if (player1Won) {
+            this.careerStats.wins++;
+            this.careerStats.streak++;
+            if (this.careerStats.streak > this.careerStats.bestStreak) {
+                this.careerStats.bestStreak = this.careerStats.streak;
+            }
+        } else {
+            this.careerStats.losses++;
+            this.careerStats.streak = 0;
+        }
+        localStorage.setItem("cybermon_career_stats", JSON.stringify(this.careerStats));
+        this.updateTrainerCard();
+    }
+
+    togglePause() {
+        if (!window.gameEngine || window.gameEngine.matchOver || this.selectedMode === "pvp_online") return;
+        const modal = document.getElementById("pause-modal");
+        if (!modal) return;
+        const isPaused = !window.gameEngine.isPaused;
+        window.gameEngine.isPaused = isPaused;
+        if (isPaused) {
+            modal.classList.remove("hidden");
+            if (window.soundEngine) window.soundEngine.playMenuSelect();
+        } else {
+            modal.classList.add("hidden");
+            if (window.soundEngine) window.soundEngine.playMenuSelect();
+        }
     }
 
     toggleSpectatorMode() {
@@ -382,6 +446,35 @@ class UIManager {
         document.getElementById("btn-close-controls").addEventListener("click", () => {
             document.getElementById("controls-modal").classList.add("hidden");
         });
+
+        // Pause Modal Handlers
+        const btnPauseResume = document.getElementById("btn-pause-resume");
+        if (btnPauseResume) {
+            btnPauseResume.addEventListener("click", () => this.togglePause());
+        }
+
+        const btnPauseControls = document.getElementById("btn-pause-controls");
+        if (btnPauseControls) {
+            btnPauseControls.addEventListener("click", () => {
+                document.getElementById("controls-modal").classList.remove("hidden");
+            });
+        }
+
+        const btnPauseRestart = document.getElementById("btn-pause-restart");
+        if (btnPauseRestart) {
+            btnPauseRestart.addEventListener("click", () => {
+                this.togglePause();
+                this.startFight();
+            });
+        }
+
+        const btnPauseExit = document.getElementById("btn-pause-exit");
+        if (btnPauseExit) {
+            btnPauseExit.addEventListener("click", () => {
+                this.togglePause();
+                this.showScreen("menu");
+            });
+        }
     }
 
     showScreen(screenId) {
@@ -389,6 +482,10 @@ class UIManager {
         const target = document.getElementById(`screen-${screenId}`);
         if (target) target.classList.remove("hidden");
         this.currentScreen = screenId;
+
+        const pauseModal = document.getElementById("pause-modal");
+        if (pauseModal) pauseModal.classList.add("hidden");
+        if (window.gameEngine) window.gameEngine.isPaused = false;
     }
 
     renderCharacterGrid() {

@@ -7,7 +7,40 @@
  * - High / Mid / Low block hierarchy & Firewall Guard Crush
  * - Dynamic Tekken camera (zoom, screen shake, slow-mo K.O.)
  * - Rich animated sprites with dynamic aura & particle engine
+ * - Pokémon Type Matchups, Counter Hit floaters & Ghost motion trails
  */
+
+const POKEMON_TYPE_EFFECTIVENESS = {
+    FIRE: { strong: ["BUG", "STEEL", "GRASS"], weak: ["WATER", "FIRE", "DRAGON", "ROCK"] },
+    WATER: { strong: ["FIRE", "GROUND", "ROCK"], weak: ["WATER", "GRASS", "DRAGON"] },
+    ELECTRIC: { strong: ["WATER", "FLYING"], weak: ["ELECTRIC", "GRASS", "DRAGON", "GROUND"] },
+    GRASS: { strong: ["WATER", "GROUND", "ROCK"], weak: ["FIRE", "GRASS", "POISON", "FLYING", "BUG", "DRAGON", "STEEL"] },
+    FIGHTING: { strong: ["NORMAL", "STEEL", "DARK", "ROCK", "ICE"], weak: ["POISON", "FLYING", "PSYCHIC", "BUG", "GHOST", "FAIRY"] },
+    PSYCHIC: { strong: ["FIGHTING", "POISON"], weak: ["PSYCHIC", "STEEL", "DARK"] },
+    GHOST: { strong: ["PSYCHIC", "GHOST"], weak: ["DARK", "NORMAL"] },
+    BUG: { strong: ["GRASS", "PSYCHIC", "DARK"], weak: ["FIRE", "FIGHTING", "POISON", "FLYING", "GHOST", "STEEL", "FAIRY"] },
+    STEEL: { strong: ["ICE", "ROCK", "FAIRY"], weak: ["FIRE", "WATER", "ELECTRIC", "STEEL"] },
+    POISON: { strong: ["GRASS", "FAIRY"], weak: ["POISON", "GROUND", "ROCK", "GHOST", "STEEL"] },
+    DARK: { strong: ["PSYCHIC", "GHOST"], weak: ["FIGHTING", "DARK", "FAIRY"] },
+    NORMAL: { strong: [], weak: ["ROCK", "STEEL", "GHOST"] }
+};
+
+function calculateTypeEffectiveness(attackerTypes, defenderTypes) {
+    if (!attackerTypes || !defenderTypes) return 1.0;
+    let multiplier = 1.0;
+    for (const aType of attackerTypes) {
+        const chart = POKEMON_TYPE_EFFECTIVENESS[aType];
+        if (!chart) continue;
+        for (const dType of defenderTypes) {
+            if (chart.strong.includes(dType)) {
+                multiplier *= 1.25;
+            } else if (chart.weak.includes(dType)) {
+                multiplier *= 0.85;
+            }
+        }
+    }
+    return multiplier;
+}
 
 class Fighter {
     constructor(charId, side = 1, isBot = false, difficulty = "apt_hacker") {
@@ -95,6 +128,10 @@ class Fighter {
         this.animScaleX = 1.0;
         this.animScaleY = 1.0;
         this.animTilt = 0;
+
+        // High-Speed Ghost Motion Trails (Tekken / Extreme Speed After-images)
+        this.ghostTrails = [];
+        this.trailTimer = 0;
 
         // Projectiles
         this.projectiles = [];
@@ -277,6 +314,45 @@ class Fighter {
 
             if (p.life <= 0 || p.x < 50 || p.x > 950) {
                 this.projectiles.splice(i, 1);
+            }
+        }
+
+        // Capture high-speed ghost motion trails (After-images)
+        const isHighSpeed = this.state === "dash_fwd" || this.state === "dash_back" || this.isTransformed || this.inRage || (this.state === "attack" && Math.abs(this.animOffsetX) > 8);
+        if (isHighSpeed) {
+            this.trailTimer = (this.trailTimer || 0) + 1;
+            if (this.trailTimer % 3 === 0) {
+                let activeSprite;
+                const useBackSprite = (this.side === 1 && this.facing === -1) || (this.side === 2 && this.facing === 1);
+                if (this.isTransformed) {
+                    activeSprite = useBackSprite ? this.megaBackImg : this.megaFrontImg;
+                } else if (this.inRage || this.state === "attack") {
+                    activeSprite = useBackSprite ? (this.shinyBackImg.complete ? this.shinyBackImg : this.spriteBackImg) : (this.shinyFrontImg.complete ? this.shinyFrontImg : this.spriteFrontImg);
+                } else {
+                    activeSprite = useBackSprite ? this.spriteBackImg : this.spriteFrontImg;
+                }
+
+                this.ghostTrails.push({
+                    x: this.x + (this.animOffsetX || 0),
+                    y: this.y + this.z * 15 + (this.animOffsetY || 0),
+                    z: this.z,
+                    facing: this.facing,
+                    animTilt: this.animTilt || 0,
+                    animScaleX: this.animScaleX || 1.0,
+                    animScaleY: this.animScaleY || 1.0,
+                    sprite: activeSprite,
+                    alpha: 0.55,
+                    color: this.charData.color || (this.side === 1 ? "#00e5ff" : "#ff1744")
+                });
+                if (this.ghostTrails.length > 5) this.ghostTrails.shift();
+            }
+        }
+
+        // Fade existing ghost trails
+        for (let i = this.ghostTrails.length - 1; i >= 0; i--) {
+            this.ghostTrails[i].alpha -= 0.05;
+            if (this.ghostTrails[i].alpha <= 0) {
+                this.ghostTrails.splice(i, 1);
             }
         }
     }
@@ -627,10 +703,18 @@ class Fighter {
         let damage = rawDamage / this.buffs.defenseUp;
         if (isCounterHit) damage *= 1.25;
 
+        // Pokémon Type Effectiveness Matchup
+        let typeMultiplier = 1.0;
+        if (attacker && attacker.charData && attacker.charData.types && this.charData && this.charData.types) {
+            typeMultiplier = calculateTypeEffectiveness(attacker.charData.types, this.charData.types);
+        }
+        const isSuperEffective = typeMultiplier > 1.15;
+        if (isSuperEffective) damage *= 1.20;
+
         // White-out hit flash and hit-stop
-        this.hitFlashFrames = isCounterHit ? 8 : 5;
+        this.hitFlashFrames = (isCounterHit || isSuperEffective) ? 8 : 5;
         if (window.gameEngine) {
-            window.gameEngine.triggerHitStop(isLauncher ? 6 : (isCounterHit ? 5 : 3));
+            window.gameEngine.triggerHitStop(isLauncher ? 6 : ((isCounterHit || isSuperEffective) ? 5 : 3));
         }
 
         // Juggle Damage Scaling
@@ -652,7 +736,7 @@ class Fighter {
 
         // Sparks & Sound
         if (window.soundEngine) {
-            window.soundEngine.playHit(isLauncher ? "launch" : "heavy", isCounterHit);
+            window.soundEngine.playHit(isLauncher ? "launch" : "heavy", isCounterHit || isSuperEffective);
             if (isCounterHit) {
                 window.soundEngine.playCrowdOoh();
                 window.soundEngine.announce("COUNTER HIT!");
@@ -660,11 +744,16 @@ class Fighter {
         }
 
         if (window.gameEngine) {
-            const sparkColor = isCounterHit ? "#ffff00" : (this.charData.color || "#00e5ff");
-            window.gameEngine.spawnSpark(this.x, this.y - 60, sparkColor, isCounterHit ? 30 : 18);
-            window.gameEngine.triggerCameraShake(isCounterHit ? 10 : 6, 12);
+            const sparkColor = isCounterHit ? "#ffff00" : (isSuperEffective ? "#ffcb05" : (this.charData.color || "#00e5ff"));
+            window.gameEngine.spawnSpark(this.x, this.y - 60, sparkColor, (isCounterHit || isSuperEffective) ? 30 : 18);
+            window.gameEngine.triggerCameraShake((isCounterHit || isSuperEffective) ? 10 : 6, 12);
             if (isCounterHit) {
+                window.gameEngine.spawnFloatingText(this.x, this.y - 95, "COUNTER HIT!", "#00e5ff", "CRITICAL BREACH (+25%)", 1.25);
                 window.gameEngine.logCombatEvent("COUNTER", `COUNTER HIT! ${attacker ? attacker.charData.name.toUpperCase() : "ATTACKER"} dealt +25% bonus impact!`);
+            }
+            if (isSuperEffective) {
+                window.gameEngine.spawnFloatingText(this.x, this.y - (isCounterHit ? 130 : 95), "SUPER EFFECTIVE!", "#ffcb05", "⚡ ZERO-DAY EXPLOIT (+20%)", 1.15);
+                window.gameEngine.logCombatEvent("TYPE", `SUPER EFFECTIVE! ${attacker ? attacker.charData.name.toUpperCase() : "ATTACKER"} exploited ${this.charData.name.toUpperCase()} type weakness!`);
             }
         }
 
@@ -734,6 +823,8 @@ class GameEngine {
         this.sparks = [];
         this.shields = [];
         this.attackVFX = [];
+        this.floatingTexts = [];
+        this.isPaused = false;
         this.hitStopFrames = 0;
         this.bannerText = "";
         this.bannerColor = "#00e5ff";
@@ -762,6 +853,13 @@ class GameEngine {
 
     setupKeyboard() {
         window.addEventListener('keydown', (e) => {
+            if (e.code === "Escape" || e.code === "KeyP") {
+                if (window.uiManager && window.uiManager.currentScreen === "battle") {
+                    e.preventDefault();
+                    window.uiManager.togglePause();
+                    return;
+                }
+            }
             if (this.isReplaying && (e.code === "Space" || e.code === "Enter")) {
                 e.preventDefault();
                 this.stopSlowMoReplay();
@@ -785,7 +883,7 @@ class GameEngine {
     }
 
     handlePlayerInput(code, isDown) {
-        if (!this.p1 || this.matchOver || this.isReplaying) return;
+        if (!this.p1 || this.matchOver || this.isReplaying || this.isPaused) return;
 
         // Player 1 Controls: WASD for movement, U/I/J/K for Tekken 1,2,3,4 attacks
         // Or alternative F/G/H/V
@@ -976,6 +1074,13 @@ class GameEngine {
                 const victor = this.p1Wins >= 2 ? this.p1 : this.p2;
                 this.showBanner(`${victor.charData.name.toUpperCase()} WINS!`, "#00e676", 200);
                 this.logCombatEvent("VICTORY", `🏆 MATCH CONCLUDED // ${victor.charData.name.toUpperCase()} WINS CYBER CHAMPIONSHIP!`);
+                if (window.uiManager && typeof window.uiManager.recordMatchResult === "function") {
+                    try {
+                        window.uiManager.recordMatchResult(victor === this.p1);
+                    } catch (e) {
+                        console.error("Error recording career stats:", e);
+                    }
+                }
                 if (window.soundEngine) {
                     try {
                         if (typeof window.soundEngine.playVictory === "function") {
@@ -1029,6 +1134,13 @@ class GameEngine {
                 this.matchOver = true;
                 const victor = this.p1Wins >= 2 ? this.p1 : this.p2;
                 this.showBanner(`${victor.charData.name.toUpperCase()} WINS!`, "#00e676", 200);
+                if (window.uiManager && typeof window.uiManager.recordMatchResult === "function") {
+                    try {
+                        window.uiManager.recordMatchResult(victor === this.p1);
+                    } catch (e) {
+                        console.error("Error recording career stats:", e);
+                    }
+                }
                 if (window.uiManager) window.uiManager.showVictoryScreen(victor);
             } else {
                 this.round++;
@@ -1234,8 +1346,72 @@ class GameEngine {
         }
     }
 
+    spawnFloatingText(x, y, text, color = "#ffcb05", subText = "", scale = 1.0) {
+        this.floatingTexts.push({
+            x: x,
+            y: y,
+            text: text,
+            subText: subText,
+            color: color,
+            scale: scale,
+            life: 45,
+            maxLife: 45
+        });
+    }
+
+    renderFloatingTexts(ctx) {
+        for (const ft of this.floatingTexts) {
+            const alpha = Math.min(1.0, ft.life / 12);
+            ctx.save();
+            ctx.globalAlpha = Math.max(0, alpha);
+            ctx.font = `900 ${Math.round(18 * ft.scale)}px 'Orbitron', monospace, sans-serif`;
+            ctx.textAlign = "center";
+            ctx.shadowColor = ft.color;
+            ctx.shadowBlur = 14;
+            ctx.fillStyle = ft.color;
+            ctx.fillText(ft.text, ft.x, ft.y);
+
+            if (ft.subText) {
+                ctx.font = `bold ${Math.round(11 * ft.scale)}px 'Rajdhani', sans-serif`;
+                ctx.fillStyle = "#ffffff";
+                ctx.shadowColor = "#ffffff";
+                ctx.shadowBlur = 6;
+                ctx.fillText(ft.subText, ft.x, ft.y + 16 * ft.scale);
+            }
+            ctx.restore();
+        }
+    }
+
+    renderGhostTrails(ctx, f) {
+        if (!f || !f.ghostTrails || f.ghostTrails.length === 0) return;
+        for (const ghost of f.ghostTrails) {
+            if (!ghost.sprite || !ghost.sprite.complete || ghost.sprite.naturalWidth === 0) continue;
+            ctx.save();
+            const depthScale = 1.0 + ghost.z * 0.12;
+            ctx.translate(ghost.x, ghost.y);
+            ctx.scale(ghost.facing * depthScale * ghost.animScaleX, depthScale * ghost.animScaleY);
+            if (ghost.animTilt) ctx.rotate((ghost.animTilt * Math.PI) / 180);
+
+            ctx.globalAlpha = Math.max(0, ghost.alpha * 0.45);
+            ctx.shadowColor = ghost.color;
+            ctx.shadowBlur = 16;
+            ctx.filter = "brightness(2) contrast(1.5)";
+            const aspect = ghost.sprite.naturalWidth / ghost.sprite.naturalHeight;
+            const drawH = f.charData.height * 1.15;
+            const drawW = drawH * aspect;
+            ctx.drawImage(ghost.sprite, -drawW / 2, -drawH, drawW, drawH);
+            ctx.restore();
+        }
+    }
+
     gameLoop() {
         if (!this.running) return;
+
+        if (this.isPaused) {
+            this.render();
+            requestAnimationFrame(() => this.gameLoop());
+            return;
+        }
 
         // Slow-Motion Final Hit Replay Loop (0.25x speed)
         if (this.isReplaying) {
@@ -1329,6 +1505,14 @@ class GameEngine {
             if (fx.life <= 0) this.attackVFX.splice(i, 1);
         }
 
+        // Update & decay floating combat text
+        for (let i = this.floatingTexts.length - 1; i >= 0; i--) {
+            const ft = this.floatingTexts[i];
+            ft.y -= 0.85;
+            ft.life--;
+            if (ft.life <= 0) this.floatingTexts.splice(i, 1);
+        }
+
         if (this.bannerTime > 0) this.bannerTime--;
 
         this.render();
@@ -1362,9 +1546,10 @@ class GameEngine {
         if (this.p1) this.renderShadow(ctx, this.p1);
         if (this.p2) this.renderShadow(ctx, this.p2);
 
-        // 3. Draw Fighters (sorted by Z axis for 2.5D depth)
+        // 3. Draw Fighters & High-Speed Ghost Trails (sorted by Z axis for 2.5D depth)
         const fighters = [this.p1, this.p2].filter(Boolean).sort((a, b) => a.z - b.z);
         for (const f of fighters) {
+            this.renderGhostTrails(ctx, f);
             this.renderFighter(ctx, f);
         }
 
@@ -1397,6 +1582,9 @@ class GameEngine {
 
         // 7. Draw Dynamic Attack Animations & VFX
         this.renderAttackVFX(ctx);
+
+        // 8. Draw Floating Combat Text Floaters (Super Effective / Counter Hit)
+        this.renderFloatingTexts(ctx);
 
         ctx.restore();
 

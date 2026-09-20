@@ -31,6 +31,7 @@
                             <span class="trainer-id-tag">ID: #2026-SOC</span>
                             <span class="trainer-dept-pill" id="menu-trainer-dept">SOC INCIDENT RESPONSE</span>
                             <span class="trainer-rank-pill" id="menu-trainer-title">ZERO-DAY HUNTER</span>
+                            <span class="trainer-record-pill" id="menu-trainer-record">RECORD: 0W - 0L (0%) | STREAK: 0🔥</span>
                         </div>
                         <div class="trainer-name-row">
                             <div class="trainer-name-display" id="menu-trainer-name">CHAMPION RED</div>
@@ -452,6 +453,47 @@
             <div class="victory-actions">
                 <button id="btn-rematch" class="cyber-btn">REMATCH</button>
                 <button id="btn-victory-menu" class="cyber-btn small">MAIN MENU</button>
+            </div>
+        </div>
+
+        <!-- 8. IN-GAME MATCH PAUSE MENU -->
+        <div id="pause-modal" class="pause-modal-overlay hidden">
+            <div class="pause-card pokedex-frame">
+                <div class="pause-header">
+                    <div class="pokedex-mini-led"></div>
+                    <span class="pause-title">MATCH PAUSED // POKÉMON LEAGUE</span>
+                </div>
+                <div class="pause-body">
+                    <button id="btn-pause-resume" class="cyber-btn poke-capsule-btn">
+                        <div class="btn-left-content">
+                            <span>▶</span>
+                            <span>RESUME BATTLE</span>
+                        </div>
+                        <span class="btn-arrow">▶</span>
+                    </button>
+                    <button id="btn-pause-controls" class="cyber-btn poke-capsule-btn">
+                        <div class="btn-left-content">
+                            <span>⚙</span>
+                            <span>COMMAND LIST &amp; MOVES</span>
+                        </div>
+                        <span class="btn-arrow">▶</span>
+                    </button>
+                    <button id="btn-pause-restart" class="cyber-btn poke-capsule-btn">
+                        <div class="btn-left-content">
+                            <span>🔄</span>
+                            <span>RESTART ROUND</span>
+                        </div>
+                        <span class="btn-arrow">▶</span>
+                    </button>
+                    <button id="btn-pause-exit" class="cyber-btn poke-capsule-btn highlight-gold">
+                        <div class="btn-left-content">
+                            <span>🚪</span>
+                            <span>EXIT TO MAIN MENU</span>
+                        </div>
+                        <span class="btn-arrow">▶</span>
+                    </button>
+                </div>
+                <div class="pause-hint">PRESS [ESC] OR [P] TO RESUME</div>
             </div>
         </div>
     </div>

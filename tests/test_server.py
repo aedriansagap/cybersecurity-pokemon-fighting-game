@@ -84,6 +84,8 @@ class TestCyberMonServer(unittest.TestCase):
         self.assertEqual(res.status_code, 200)
         self.assertIn("CYBER", res.text)
         self.assertIn("MON", res.text)
+        self.assertIn("menu-trainer-record", res.text)
+        self.assertIn("pause-modal", res.text)
 
     def test_audio_assets(self):
         # Verify cries and BGM files are served

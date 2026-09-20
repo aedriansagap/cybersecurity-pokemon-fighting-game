@@ -82,7 +82,8 @@ class TestCyberMonServer(unittest.TestCase):
     def test_index_page(self):
         res = self.client.get("/")
         self.assertEqual(res.status_code, 200)
-        self.assertIn("CYBERMON", res.text)
+        self.assertIn("CYBER", res.text)
+        self.assertIn("MON", res.text)
 
     def test_audio_assets(self):
         # Verify cries and BGM files are served

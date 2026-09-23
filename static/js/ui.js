@@ -251,6 +251,39 @@ class UIManager {
         }
         localStorage.setItem("cybermon_career_stats", JSON.stringify(this.careerStats));
         this.updateTrainerCard();
+        this.reportMatchToServer(player1Won);
+    }
+
+    reportMatchToServer(player1Won) {
+        // Best-effort only: persist finished fights to the shared leaderboard.
+        // Never blocks or breaks local career stats when the server is unreachable.
+        try {
+            const p1 = {
+                name: this.trainerHandle || "Player 1",
+                dept: this.trainerDept || "General",
+                character: this.selectedP1Char
+            };
+            let p2;
+            if (this.selectedMode === "pve_bot") {
+                p2 = { name: "Cyber Bot (" + this.selectedDifficulty + ")", dept: "Cyber Bot", character: this.selectedP2Char };
+            } else if (this.selectedMode === "pvp_online") {
+                p2 = { name: this.onlineOpponentHandle || "Online Rival", dept: this.onlineOpponentDept || "General", character: this.selectedP2Char };
+            } else {
+                p2 = { name: "Player 2", dept: this.trainerDept || "General", character: this.selectedP2Char };
+            }
+            fetch("/api/matches/record", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    match_id: "tekken-" + Date.now(),
+                    winner: player1Won ? p1 : p2,
+                    loser: player1Won ? p2 : p1,
+                    winner_points: 100,
+                    loser_points: 25,
+                    is_pvp: (this.selectedMode || "").indexOf("pvp") === 0
+                })
+            }).catch(() => {});
+        } catch (e) { /* local stats already saved above */ }
     }
 
     togglePause() {

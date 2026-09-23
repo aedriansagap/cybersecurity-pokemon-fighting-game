@@ -5,9 +5,6 @@ FastAPI + WebSockets Backend for 1v1 PvP & Bot Matchmaking
 
 import os
 import json
-import uuid
-import random
-import asyncio
 from typing import Dict, List, Optional
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
 from fastapi.staticfiles import StaticFiles
@@ -16,10 +13,73 @@ from pydantic import BaseModel
 
 import cyber_trivia
 
+try:
+    from sql_gateway import SqlGateway
+except ImportError:
+    SqlGateway = None
+
+
+def _load_dotenv() -> None:
+    """Minimal .env loader (stdlib only): KEY=VALUE lines, ignores # comments."""
+    env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
+    if not os.path.isfile(env_path):
+        return
+    try:
+        with open(env_path, "r", encoding="utf-8") as fh:
+            for line in fh:
+                line = line.strip()
+                if not line or line.startswith("#") or "=" not in line:
+                    continue
+                key, _, value = line.partition("=")
+                key = key.strip()
+                value = value.strip().strip('"').strip("'")
+                if key and key not in os.environ:
+                    os.environ[key] = value
+    except OSError:
+        pass
+
+
+_load_dotenv()
+
 app = FastAPI(title="CyberMon: Tekken Protocol", version="1.0.0")
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 STATIC_DIR = os.path.join(BASE_DIR, "static")
+DATA_DIR = os.path.join(BASE_DIR, "data")
+RESULTS_FILE = os.path.join(DATA_DIR, "fighting_results.json")
+PORT = int(os.environ.get("PORT", "8000"))
+
+if SqlGateway is not None:
+    try:
+        sql_gateway = SqlGateway()
+    except RuntimeError as _sql_err:
+        print(f"[SQL] Disabled ({_sql_err})")
+        sql_gateway = None
+else:
+    sql_gateway = None
+
+
+def _load_local_results() -> dict:
+    try:
+        with open(RESULTS_FILE, "r", encoding="utf-8") as fh:
+            data = json.load(fh)
+            if isinstance(data, dict):
+                return data
+    except (OSError, ValueError):
+        pass
+    return {"matches": [], "totalMatches": 0}
+
+
+def _append_local_result(entry: dict) -> dict:
+    os.makedirs(DATA_DIR, exist_ok=True)
+    data = _load_local_results()
+    data.setdefault("matches", []).append(entry)
+    data["totalMatches"] = len(data["matches"])
+    tmp = RESULTS_FILE + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as fh:
+        json.dump(data, fh, indent=2)
+    os.replace(tmp, RESULTS_FILE)
+    return data
 
 # Character Roster
 ROSTER = [
@@ -149,13 +209,40 @@ class TriviaAnswerRequest(BaseModel):
     question_id: int
     selected_option: int
 
+
+class FighterProfile(BaseModel):
+    empId: Optional[str] = None
+    name: str = "Anonymous"
+    dept: str = "General"
+    character: Optional[str] = None
+
+
+class MatchRecordRequest(BaseModel):
+    match_id: str
+    winner: FighterProfile
+    loser: FighterProfile
+    winner_points: int = 100
+    loser_points: int = 25
+    is_pvp: bool = True
+
+ROSTER_IDS = {c["id"] for c in ROSTER}
+
 @app.get("/")
 async def get_index():
     return FileResponse(os.path.join(STATIC_DIR, "index.html"))
 
+@app.get("/scoreboard")
+async def get_scoreboard_page():
+    return FileResponse(os.path.join(STATIC_DIR, "scoreboard.html"))
+
 @app.get("/api/health")
 async def health_check():
-    return {"status": "ok", "game": "CyberMon: Tekken Protocol", "version": "1.0.0"}
+    payload = {"status": "ok", "game": "CyberMon: Tekken Protocol", "version": "1.0.0"}
+    if sql_gateway is not None:
+        payload["sql"] = sql_gateway.diagnostics()
+    else:
+        payload["sql"] = {"enabled": False}
+    return payload
 
 @app.get("/api/roster")
 async def get_roster():
@@ -175,7 +262,17 @@ async def get_random_trivia_endpoint():
 
 @app.get("/api/trivia/all")
 async def get_all_trivia():
-    return {"trivia": cyber_trivia.CYBER_TRIVIA}
+    # Never leak correct answers / explanations — clients must use /verify.
+    return {"trivia": [
+        {
+            "id": t["id"],
+            "category": t["category"],
+            "question": t["question"],
+            "options": t["options"],
+            "buff": t["buff"],
+        }
+        for t in cyber_trivia.CYBER_TRIVIA
+    ]}
 
 @app.post("/api/trivia/verify")
 async def verify_trivia_answer(req: TriviaAnswerRequest):
@@ -189,6 +286,60 @@ async def verify_trivia_answer(req: TriviaAnswerRequest):
                 "buff": item["buff"] if is_correct else None
             }
     raise HTTPException(status_code=404, detail="Question not found")
+
+@app.post("/api/matches/record")
+async def record_match(req: MatchRecordRequest):
+    """Persist a finished fight to the shared database (SQL) or local JSON fallback."""
+    winner = req.winner.model_dump()
+    loser = req.loser.model_dump()
+    # The shared arena procs store monster names; map fighter character ids through.
+    winner.setdefault("monster", {"name": winner.get("character") or "Tekken Fighter"})
+    loser.setdefault("monster", {"name": loser.get("character") or "Tekken Fighter"})
+    if sql_gateway is not None and sql_gateway.enabled:
+        try:
+            sql_gateway.record_arena_battle(
+                match_id=req.match_id,
+                winner=winner,
+                loser=loser,
+                winner_points=req.winner_points,
+                loser_points=req.loser_points,
+                is_pvp=req.is_pvp,
+            )
+            return {"persisted": "sql", "match_id": req.match_id}
+        except RuntimeError as err:
+            print(f"[SQL] Match record fell back to local JSON: {err}")
+    entry = {
+        "matchId": req.match_id,
+        "winner": winner,
+        "loser": loser,
+        "winnerPoints": req.winner_points,
+        "loserPoints": req.loser_points,
+        "isPvp": req.is_pvp,
+    }
+    data = _append_local_result(entry)
+    return {"persisted": "local", "match_id": req.match_id, "totalMatches": data["totalMatches"]}
+
+
+@app.get("/api/scoreboard")
+async def get_scoreboard(top: int = 10):
+    """Shared leaderboard: SQL when configured, otherwise local fighting results."""
+    if sql_gateway is not None and sql_gateway.enabled:
+        players = sql_gateway.get_arena_leaderboard(top=top)
+        if players is not None:
+            return {
+                "source": "sql",
+                "players": players,
+                "departments": sql_gateway.get_arena_departments() or [],
+            }
+    data = _load_local_results()
+    return {
+        "source": "local",
+        "players": [],
+        "departments": [],
+        "matches": data.get("matches", [])[-top:],
+        "totalMatches": data.get("totalMatches", 0),
+    }
+
 
 @app.get("/api/rooms")
 async def list_rooms():
@@ -253,6 +404,12 @@ async def websocket_fight(websocket: WebSocket, room_id: str):
 
             if msg_type == "select_character":
                 char_id = data.get("character")
+                if char_id not in ROSTER_IDS:
+                    await websocket.send_text(json.dumps({
+                        "type": "error",
+                        "message": f"Unknown character: {char_id}",
+                    }))
+                    continue
                 if role == "p1":
                     room.p1_character = char_id
                 elif role == "p2":
@@ -338,4 +495,4 @@ app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("server:app", host="0.0.0.0", port=8000, reload=False)
+    uvicorn.run("server:app", host="0.0.0.0", port=PORT, reload=False)

@@ -1,4 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=Rajdhani:wght@500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Plus+Jakarta+Sans:wght@400;600;800&family=JetBrains+Mono:wght@400;700&display=swap');
 
 :root {
     --bg-dark: #070d18;
@@ -6,6 +7,25 @@
     --poke-blue: #2a75bb;
     --poke-red: #ee1515;
     --poke-dark: #0a1424;
+    /* Shared Championship Arena tokens (aligned with Cybersecurity2026---Game) */
+    --pk-red: #ee1515;
+    --pk-red-dark: #c00d0d;
+    --pk-yellow: #ffcb05;
+    --pk-blue: #2a75bb;
+    --pk-blue-dark: #1b53ba;
+    --pk-blue-deep: #0f2d6b;
+    --pk-dark: #1e293b;
+    --pk-darker: #0f172a;
+    --font-retro: 'Press Start 2P', 'Orbitron', monospace;
+    --font-body: 'Plus Jakarta Sans', 'Rajdhani', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+    /* Department colors (shared with the Arena scoreboard) */
+    --dept-accounting: #f59e0b;
+    --dept-hr: #3b82f6;
+    --dept-production: #10b981;
+    --dept-shipment: #ec4899;
+    --dept-sales: #8b5cf6;
+    --dept-general: #64748b;
     --neon-blue: #00e5ff;
     --neon-purple: #ab47bc;
     --neon-red: #ff1744;
@@ -181,6 +201,20 @@ h1.game-logo {
 }
 
 .menu-options-container {
+    z-index: 10;
+}
+
+/* Shared league ribbon (same branding as the Championship Arena) */
+.league-ribbon {
+    margin-top: 8px;
+    padding: 4px 14px;
+    border-radius: 4px;
+    background: linear-gradient(90deg, var(--pk-red-dark), var(--pk-red));
+    border-bottom: 3px solid var(--pk-yellow);
+    font-family: var(--font-retro);
+    font-size: 8px;
+    letter-spacing: 1px;
+    color: #ffffff;
     z-index: 10;
 }
 

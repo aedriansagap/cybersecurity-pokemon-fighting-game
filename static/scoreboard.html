@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="refresh" content="60">
+    <title>CyberMon: Tekken Protocol — Tournament Scoreboard</title>
+    <link rel="stylesheet" href="/static/css/game.css">
+    <style>
+        body { overflow: auto; }
+        #sb-container { max-width: 1000px; margin: 24px auto; padding: 0 16px; }
+        .sb-header {
+            background: linear-gradient(90deg, var(--pk-red-dark), var(--pk-red));
+            border-bottom: 5px solid var(--pk-yellow);
+            border-radius: 12px 12px 0 0;
+            padding: 18px 24px;
+            font-family: var(--font-retro);
+            color: #fff;
+        }
+        .sb-header h1 { font-size: 16px; letter-spacing: 1px; }
+        .sb-header p { font-family: var(--font-body); font-size: 14px; opacity: 0.9; margin-top: 8px; }
+        .sb-body { background: var(--panel-bg); border: 1.5px solid var(--pk-blue); border-top: none; border-radius: 0 0 12px 12px; padding: 20px 24px; }
+        .sb-body h2 { font-family: var(--font-retro); font-size: 10px; color: var(--pk-yellow); margin: 16px 0 8px; }
+        table.sb-table { width: 100%; border-collapse: collapse; font-family: var(--font-body); font-size: 14px; }
+        table.sb-table th, table.sb-table td { text-align: left; padding: 8px 10px; border-bottom: 1px solid rgba(255,255,255,0.12); }
+        table.sb-table th { font-family: var(--font-mono); font-size: 12px; color: var(--neon-blue); }
+        .sb-source { font-family: var(--font-mono); font-size: 12px; color: #93a4bd; }
+        .sb-empty { font-family: var(--font-body); color: #93a4bd; padding: 12px 0; }
+    </style>
+</head>
+<body>
+    <div class="crt-overlay"></div>
+    <div id="sb-container">
+        <div class="sb-header">
+            <h1>⚡ CYBERMON: TEKKEN PROTOCOL — TOURNAMENT SCOREBOARD ⚡</h1>
+            <p>Shared leaderboard with the Championship Arena · <span class="sb-source" id="sb-source">loading…</span></p>
+        </div>
+        <div class="sb-body">
+            <h2>★ TOP TRAINERS</h2>
+            <div id="sb-players"><div class="sb-empty">Loading…</div></div>
+            <h2>★ RECENT BATTLES</h2>
+            <div id="sb-matches"><div class="sb-empty">Loading…</div></div>
+        </div>
+    </div>
+    <script>
+        async function loadScoreboard() {
+            try {
+                const res = await fetch("/api/scoreboard?top=10");
+                const data = await res.json();
+                document.getElementById("sb-source").textContent =
+                    "source: " + data.source + (data.source === "sql" ? " (shared database)" : " (local — set DB_SERVER for shared standings)");
+                const playersEl = document.getElementById("sb-players");
+                if (data.players && data.players.length) {
+                    const cols = Object.keys(data.players[0]);
+                    let html = "<table class='sb-table'><tr>" + cols.map(c => "<th>" + c + "</th>").join("") + "</tr>";
+                    for (const p of data.players) {
+                        html += "<tr>" + cols.map(c => "<td>" + (p[c] ?? "") + "</td>").join("") + "</tr>";
+                    }
+                    playersEl.innerHTML = html + "</table>";
+                } else {
+                    playersEl.innerHTML = "<div class='sb-empty'>No ranked trainers yet — finish a match to open the ledger.</div>";
+                }
+                const matchesEl = document.getElementById("sb-matches");
+                if (data.matches && data.matches.length) {
+                    let html = "<table class='sb-table'><tr><th>Match</th><th>Winner</th><th>Loser</th><th>Pts</th></tr>";
+                    for (const m of data.matches.slice().reverse()) {
+                        html += "<tr><td>" + (m.matchId || "") + "</td><td>" +
+                            ((m.winner && m.winner.name) || "") + "</td><td>" +
+                            ((m.loser && m.loser.name) || "") + "</td><td>" +
+                            (m.winnerPoints ?? "") + " / " + (m.loserPoints ?? "") + "</td></tr>";
+                    }
+                    matchesEl.innerHTML = html + "</table>";
+                } else if (!data.players || !data.players.length) {
+                    matchesEl.innerHTML = "<div class='sb-empty'>No battles recorded yet.</div>";
+                } else {
+                    matchesEl.innerHTML = "<div class='sb-empty'>See full battle history in the Championship Arena.</div>";
+                }
+            } catch (e) {
+                document.getElementById("sb-source").textContent = "unreachable — retrying…";
+            }
+        }
+        loadScoreboard();
+        setInterval(loadScoreboard, 10000);
+    </script>
+</body>
+</html>

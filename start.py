@@ -25,7 +25,7 @@ def main():
     print("=" * 60)
 
     lan_ip = get_lan_ip()
-    port = 8000
+    port = int(os.environ.get("PORT", "8000"))
     local_url = f"http://localhost:{port}"
     lan_url = f"http://{lan_ip}:{port}"
 
@@ -36,6 +36,8 @@ def main():
     print("              S+D+I (df+2 Launcher), U (Special), SPACE (Zero-Day Rage Art)")
     print("    Player 2: Arrow Keys, Numpad 1/2/4/5 (1/2/3/4), Numpad 6 (Special), Enter (Rage)")
     print("\nStarting server...")
+    if "--open" in sys.argv:
+        webbrowser.open(local_url)
 
     import uvicorn
     uvicorn.run("server:app", host="0.0.0.0", port=port, reload=False)

@@ -1,3 +1,4 @@
+import json
 import unittest
 from fastapi.testclient import TestClient
 from server import app, ROSTER
@@ -78,6 +79,60 @@ class TestCyberMonServer(unittest.TestCase):
                 received_by_ws2 = ws2.receive_json()
                 self.assertEqual(received_by_ws2["type"], "input")
                 self.assertEqual(received_by_ws2["sender"], "p1")
+
+    def test_trivia_all_hides_answers(self):
+        res = self.client.get("/api/trivia/all")
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assertIn("trivia", data)
+        self.assertGreater(len(data["trivia"]), 0)
+        for item in data["trivia"]:
+            self.assertNotIn("correct", item)
+            self.assertIn("question", item)
+            self.assertIn("options", item)
+
+    def test_health_reports_sql_status(self):
+        res = self.client.get("/api/health")
+        data = res.json()
+        self.assertIn("sql", data)
+        self.assertIn("enabled", data["sql"])
+        # Diagnostics must never expose credentials
+        self.assertNotIn("password", json.dumps(data["sql"]).lower().replace("passwordconfigured", ""))
+
+    def test_scoreboard_local_fallback(self):
+        res = self.client.get("/api/scoreboard")
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assertIn("source", data)
+        self.assertIn(data["source"], ("sql", "local"))
+
+    def test_record_match_local_fallback(self):
+        res = self.client.post("/api/matches/record", json={
+            "match_id": "test-match-1",
+            "winner": {"name": "Alice", "dept": "HR", "character": "lucario"},
+            "loser": {"name": "Bob", "dept": "Sales", "character": "gengar"},
+            "winner_points": 100,
+            "loser_points": 25,
+            "is_pvp": True,
+        })
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assertIn(data["persisted"], ("sql", "local"))
+        self.assertEqual(data["match_id"], "test-match-1")
+
+    def test_select_unknown_character_rejected(self):
+        room_id = "test-room-badchar"
+        with self.client.websocket_connect(f"/ws/fight/{room_id}") as ws:
+            ws.receive_json()  # welcome
+            ws.receive_json()  # player_status
+            ws.send_json({"type": "select_character", "character": "missingno"})
+            err = ws.receive_json()
+            self.assertEqual(err["type"], "error")
+
+    def test_scoreboard_page(self):
+        res = self.client.get("/scoreboard")
+        self.assertEqual(res.status_code, 200)
+        self.assertIn("SCOREBOARD", res.text)
 
     def test_index_page(self):
         res = self.client.get("/")

@@ -141,6 +141,11 @@ class TestCyberMonServer(unittest.TestCase):
         self.assertIn("MON", res.text)
         self.assertIn("menu-trainer-record", res.text)
         self.assertIn("pause-modal", res.text)
+        # Arena-style lobby
+        self.assertIn("CHOOSE YOUR BATTLE", res.text)
+        self.assertIn("lobby-recent-list", res.text)
+        self.assertIn("Hall of Fame", res.text)
+        self.assertIn("HOW A MATCH WORKS", res.text)
 
     def test_audio_assets(self):
         # Verify cries and BGM files are served

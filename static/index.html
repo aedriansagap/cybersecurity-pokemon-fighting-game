@@ -11,11 +11,36 @@
 
     <div id="game-container">
         <!-- 1. MAIN MENU SCREEN -->
-        <div id="screen-menu" class="game-screen">
+        <div id="screen-menu" class="game-screen arena-lobby">
             <!-- Animated Background Particles / Rays -->
             <div class="poke-bg-rays"></div>
 
-            <!-- Trainer Passport Card -->
+            <!-- Arena-style top navigation -->
+            <header class="arena-nav">
+                <div class="arena-brand">
+                    <div class="pokeball-badge"></div>
+                    <div class="arena-brand-text">
+                        <div class="arena-brand-title">CYBERMON</div>
+                        <div class="arena-brand-sub">TEKKEN PROTOCOL</div>
+                    </div>
+                </div>
+                <div class="arena-nav-actions">
+                    <a href="/scoreboard" target="_blank" rel="noopener" class="arena-nav-link" title="Open the shared tournament scoreboard (TV view)">🏆 Hall of Fame</a>
+                </div>
+            </header>
+
+            <!-- Lobby hero -->
+            <div class="lobby-hero">
+                <div class="league-ribbon">★ LIVE 1V1 CYBER LEAGUE ★</div>
+                <h1 class="lobby-title">CHOOSE YOUR BATTLE</h1>
+                <p class="lobby-subtitle">Fight the Cyber Bot, duel a colleague on one keyboard, or battle online with a room code. Every win feeds the shared tournament scoreboard.</p>
+            </div>
+
+            <!-- Lobby card -->
+            <div class="arena-profile-card">
+                <div class="arena-grid">
+                    <div class="arena-col">
+                        <div class="arena-section-label">YOUR TRAINER PASSPORT</div>
             <div class="trainer-card-bar">
                 <div class="trainer-card-header">
                     <div class="pokedex-mini-led"></div>
@@ -51,45 +76,34 @@
                 </div>
             </div>
 
-            <div class="poke-hero-header">
-                <div class="poke-logo-wrapper">
-                    <div class="pokeball-badge spinning"></div>
-                    <h1 class="game-logo"><span class="logo-yellow">CYBER</span><span class="logo-blue">MON</span></h1>
-                    <div class="pokeball-badge spinning"></div>
-                </div>
-                <div class="sub-tagline-badge">
-                    <span>⚡ POKÉMON BATTLE CLUB // CYBERSECURITY TOURNAMENT 2026 ⚡</span>
-                </div>
-                <div class="league-ribbon">★ LIVE 1V1 CYBER LEAGUE ★ CHAMPIONSHIP ARENA ★</div>
-            </div>
-
+            <div class="arena-section-label">PICK A BATTLE MODE</div>
             <div class="menu-options-container">
                 <div class="menu-options">
                     <button id="btn-mode-bot" class="cyber-btn poke-capsule-btn">
                         <div class="btn-left-content">
                             <img src="/static/assets/sprites/items/poke-ball.png" class="btn-ball-img" alt="Pokeball">
-                            <span>1V1 VS CYBER BOT</span>
+                            <span class="btn-text-main">1V1 VS CYBER BOT<small class="btn-caption">Practice against 4 AI threat levels</small></span>
                         </div>
                         <span class="btn-arrow">▶</span>
                     </button>
                     <button id="btn-mode-local" class="cyber-btn poke-capsule-btn">
                         <div class="btn-left-content">
                             <img src="/static/assets/sprites/items/ultra-ball.png" class="btn-ball-img" alt="Ultra Ball">
-                            <span>1V1 LOCAL PVP</span>
+                            <span class="btn-text-main">1V1 LOCAL PVP<small class="btn-caption">Two players, one keyboard</small></span>
                         </div>
                         <span class="btn-arrow">▶</span>
                     </button>
                     <button id="btn-mode-online" class="cyber-btn poke-capsule-btn highlight-gold">
                         <div class="btn-left-content">
                             <img src="/static/assets/sprites/items/master-ball.png" class="btn-ball-img" alt="Master Ball">
-                            <span>1V1 UNION ROOM // ONLINE</span>
+                            <span class="btn-text-main">1V1 UNION ROOM // ONLINE<small class="btn-caption">Live battle with a room code</small></span>
                         </div>
                         <span class="btn-arrow">▶</span>
                     </button>
                     <button id="btn-mode-training" class="cyber-btn poke-capsule-btn">
                         <div class="btn-left-content">
                             <img src="/static/assets/sprites/items/poke-ball.png" class="btn-ball-img" alt="Pokeball">
-                            <span>SOC SANDBOX // TRAINING</span>
+                            <span class="btn-text-main">SOC SANDBOX // TRAINING<small class="btn-caption">Practice moves against a dummy</small></span>
                         </div>
                         <span class="btn-arrow">▶</span>
                     </button>
@@ -118,7 +132,25 @@
                             <option value="bw2-gym">Pokémon B&amp;W 2 - Gym Leader Theme</option>
                             <option value="xy-trainer">Pokémon X&amp;Y - Trainer Battle</option>
                         </select>
-                        <a href="/scoreboard" target="_blank" rel="noopener" title="Open the shared tournament scoreboard (TV view)">📺 SCOREBOARD</a>
+                    </div>
+                </div>
+                    </div>
+                </div>
+                    <div class="arena-col">
+                        <div class="arena-section-label">HOW A MATCH WORKS</div>
+                        <ol class="arena-steps">
+                            <li><strong>1. Pick a mode.</strong><span>Train against the Cyber Bot, share a keyboard, or go online with a room code.</span></li>
+                            <li><strong>2. Choose your fighter.</strong><span>Each Pokémon brings its own speed, reach, and Rage Art super move.</span></li>
+                            <li><strong>3. Win and climb.</strong><span>Results are recorded to the shared tournament scoreboard.</span></li>
+                        </ol>
+                        <div class="arena-section-label">DOJO RANKINGS</div>
+                        <div class="arena-rankings-box">
+                            <div class="arena-rankings-head">
+                                <span>🏆 RECENT BATTLES</span>
+                                <a href="/scoreboard" target="_blank" rel="noopener">Full Scoreboard ➔</a>
+                            </div>
+                            <div id="lobby-recent-list"><div class="lobby-rank-empty">Loading recent battles…</div></div>
+                        </div>
                     </div>
                 </div>
             </div>

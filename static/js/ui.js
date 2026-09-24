@@ -519,6 +519,50 @@ class UIManager {
         const pauseModal = document.getElementById("pause-modal");
         if (pauseModal) pauseModal.classList.add("hidden");
         if (window.gameEngine) window.gameEngine.isPaused = false;
+
+        if (screenId === "menu") {
+            try { this.refreshLobbyRankings(); } catch (e) { /* best effort only */ }
+        }
+    }
+
+    refreshLobbyRankings() {
+        const list = document.getElementById("lobby-recent-list");
+        if (!list) return;
+        fetch("/api/scoreboard?top=5").then(res => res.json()).then(data => {
+            const matches = (data && data.matches) || [];
+            list.innerHTML = "";
+            if (!matches.length) {
+                const empty = document.createElement("div");
+                empty.className = "lobby-rank-empty";
+                empty.textContent = data && data.source === "sql"
+                    ? "No Tekken bouts on the shared ledger yet — your first win opens it."
+                    : "No battles recorded yet — your first win opens the ledger.";
+                list.appendChild(empty);
+                return;
+            }
+            matches.slice().reverse().forEach(m => {
+                const row = document.createElement("div");
+                row.className = "lobby-rank-row";
+                const names = document.createElement("span");
+                const winner = document.createElement("span");
+                winner.className = "rank-winner";
+                winner.textContent = (m.winner && m.winner.name) || "?";
+                names.appendChild(winner);
+                names.appendChild(document.createTextNode(" def. " + ((m.loser && m.loser.name) || "?")));
+                const pts = document.createElement("span");
+                pts.className = "rank-pts";
+                pts.textContent = (m.winnerPoints ?? "") + " pts";
+                row.appendChild(names);
+                row.appendChild(pts);
+                list.appendChild(row);
+            });
+        }).catch(() => {
+            list.innerHTML = "";
+            const empty = document.createElement("div");
+            empty.className = "lobby-rank-empty";
+            empty.textContent = "Scoreboard offline — battles still save locally.";
+            list.appendChild(empty);
+        });
     }
 
     renderCharacterGrid() {

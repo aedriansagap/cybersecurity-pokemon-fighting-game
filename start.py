@@ -33,8 +33,8 @@ def main():
     print(f"[+] LAN / Event URL:  {lan_url}")
     print("\n[+] Tournament Controls:")
     print("    Player 1: WASD (Move), J (1/LP), I (2/RP), K (3/LK), O (4/RK)")
-    print("              S+D+I (df+2 Launcher), U (Special), SPACE (Zero-Day Rage Art)")
-    print("    Player 2: Arrow Keys, Numpad 1/2/4/5 (1/2/3/4), Numpad 6 (Special), Enter (Rage)")
+    print("              S+D+I (df+2 Launcher), U (Special), SPACE (Zero-Day Rage Art: full meter + quiz)")
+    print("    Player 2: Arrow Keys, Numpad 1/2/4/5 (1/2/3/4), Numpad 6 (Special), Enter (Rage: full meter + quiz)")
     print("\nStarting server...")
     if "--open" in sys.argv:
         webbrowser.open(local_url)

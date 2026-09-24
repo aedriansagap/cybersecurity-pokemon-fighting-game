@@ -15,7 +15,7 @@ Tailored specifically for an internal company cybersecurity event, it pairs offi
   - **2.5D 3D Sidestepping**: Tap Up or Down to dodge into foreground or background lanes, evading linear attacks.
   - **High / Mid / Low Guard Hierarchy**: Low attacks beat standing guards; mid attacks beat crouching guards.
   - **Firewall Guard Gauge**: Sustained blocking drains Firewall integrity. Breaking it causes a **Security Breach** (Guard Crush stun)!
-  - **Zero-Day Rage Art**: When HP drops below 35%, fighters enter **Rage Mode** and can unleash a cinematic super move.
+  - **Zero-Day Rage Art**: When HP drops below 35%, fighters enter **Rage Mode** and start charging their **Zero-Day meter** by landing hits. At 100% charge, press the Super key to face a **cybersecurity challenge** — answer correctly to authenticate and unleash the cinematic super move (a wrong answer drains the meter to 50%).
 - **Multiple Game Modes**:
   1. **1v1 vs Cyber Bot**: 4 Threat Levels: *Script Kiddie (Easy)*, *White Hat Sentinel (Medium)*, *APT Infiltrator (Hard)*, *Zero-Day Overlord (Nightmare)*.
   2. **1v1 Local PvP**: 2 players on a single keyboard or gamepads.
@@ -75,7 +75,7 @@ The terminal will display both the local URL and your machine's LAN IP:
 | **S + D + I** | Down-Forward 2 (`df+2`) | **Electric Uppercut Launcher** ⚡ |
 | **D, D + I** | Forward-Forward 2 (`f,f+2`) | Dashing Surge Strike |
 | **U** | Cyber Special Move | Projectile / Rush Attack |
-| **SPACE** | **Zero-Day Rage Art** | Cinematic Super (HP < 35%) |
+| **SPACE** | **Zero-Day Rage Art** | Cinematic Super (HP < 35%, full meter + quiz auth) |
 
 ### Player 2 (Local PvP on Same Keyboard)
 | Input | Action |
@@ -87,7 +87,7 @@ The terminal will display both the local URL and your machine's LAN IP:
 | **Numpad 5 / 0** | Button 4 (Right Kick) |
 | **↓ + → + Numpad 2** | `df+2` Uppercut Launcher |
 | **Numpad 6 / -** | Cyber Special Move |
-| **ENTER** | Zero-Day Rage Art |
+| **ENTER** | Zero-Day Rage Art | Cinematic Super (HP < 35%, full meter + quiz auth) |
 
 ---
 

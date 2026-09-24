@@ -65,7 +65,8 @@ class Fighter {
         this.hp = this.maxHp;
         this.maxFirewall = this.charData.maxFirewall;
         this.firewall = this.maxFirewall;
-        this.threatMeter = 0; // 0 - 100
+        this.threatMeter = 0; // 0 - 100 Zero-Day charge (fills by landing hits)
+        this.rageUnlocked = false; // earned by answering the SOC challenge correctly
         this.inRage = false;
 
         // States
@@ -453,7 +454,20 @@ class Fighter {
     }
 
     handleSuperInput() {
-        this.executeRageArt();
+        // Gated supermove: full meter + passed SOC challenge fires it,
+        // full meter without auth opens the challenge instead.
+        if (this.rageUnlocked && this.threatMeter >= 100) {
+            this.executeRageArt();
+            return;
+        }
+        if (this.inRage && this.threatMeter >= 100 && !this.rageUnlocked) {
+            const modal = document.getElementById("trivia-modal");
+            if (modal && modal.classList.contains("hidden") && window.uiManager &&
+                typeof window.uiManager.triggerCyberTrivia === "function") {
+                window.uiManager.pendingRageFighter = this;
+                window.uiManager.triggerCyberTrivia("rage");
+            }
+        }
     }
 
     executeAttack(moveKey) {
@@ -485,9 +499,13 @@ class Fighter {
         }
     }
 
-    // Zero-Day Rage Art Ultimate (Available at HP < 35%)
+    // Zero-Day Rage Art Ultimate (HP < 35% + full meter + passed SOC challenge)
     executeRageArt() {
-        if (!this.inRage || !this.canAct()) return;
+        if (!this.inRage || this.threatMeter < 100 || !this.rageUnlocked || !this.canAct()) return;
+
+        // Consume the charge and the authentication
+        this.threatMeter = 0;
+        this.rageUnlocked = false;
 
         this.currentMove = {
             name: this.charData.rageArtName,
@@ -1006,6 +1024,8 @@ class GameEngine {
 
         this.p1.hp = this.p1.maxHp;
         this.p1.firewall = this.p1.maxFirewall;
+        this.p1.threatMeter = 0;
+        this.p1.rageUnlocked = false;
         this.p1.x = 300;
         this.p1.y = 520;
         this.p1.state = "idle";
@@ -1014,6 +1034,8 @@ class GameEngine {
 
         this.p2.hp = this.p2.maxHp;
         this.p2.firewall = this.p2.maxFirewall;
+        this.p2.threatMeter = 0;
+        this.p2.rageUnlocked = false;
         this.p2.x = 700;
         this.p2.y = 520;
         this.p2.state = "idle";
@@ -2159,12 +2181,32 @@ class GameEngine {
         ctx.fillStyle = "#00e5ff";
         ctx.fillRect(fwBarX, fwY, fwBarW * fwRatio, 8);
 
-        // Rage Art Super Ready Notification
+        // Zero-Day Charge Bar (fills by landing hits; full = SOC auth available)
+        const zdY = fwY + 12;
+        ctx.font = "8px 'Orbitron', monospace";
+        ctx.textAlign = "left";
+        ctx.fillStyle = "#ffcb05";
+        ctx.fillText("ZERO-DAY", x + 14, zdY + 7);
+        const zdRatio = Math.max(0, Math.min(1, f.threatMeter / 100));
+        ctx.fillStyle = "#111822";
+        ctx.fillRect(fwBarX, zdY, fwBarW, 6);
+        ctx.fillStyle = zdRatio >= 1 ? "#ff1744" : "#ab47bc";
+        ctx.fillRect(fwBarX, zdY, fwBarW * zdRatio, 6);
+
+        // Rage Art Super Prompt (3 states: charging / needs auth / ready)
         if (f.inRage) {
             ctx.fillStyle = (this.frame % 20 < 10) ? "#ee1515" : "#ffea00";
             ctx.font = "bold 11px 'Orbitron', monospace";
             ctx.textAlign = isP2 ? "right" : "left";
-            const rageText = isP2 ? "⚡ RAGE ART READY [ENTER]" : "⚡ RAGE ART READY [SPACE]";
+            const superKey = isP2 ? "ENTER" : "SPACE";
+            let rageText;
+            if (f.rageUnlocked && f.threatMeter >= 100) {
+                rageText = `⚡ ZERO-DAY READY [${superKey}]`;
+            } else if (f.threatMeter >= 100) {
+                rageText = `⚡ METER FULL — SOC AUTH [${superKey}]`;
+            } else {
+                rageText = `◌ CHARGING ZERO-DAY ${Math.floor(zdRatio * 100)}%`;
+            }
             ctx.fillText(rageText, isP2 ? x + width - 14 : x + 14, y + 106);
         }
         ctx.restore();
@@ -2188,9 +2230,9 @@ class GameEngine {
         ctx.fillStyle = "#ffcb05";
 
         if (this.mode === 'pvp_local') {
-            ctx.fillText("P1: [J] Light  [K] Launch  [L] Special  [SPACE] Super  |  P2: [1/B] Light  [2/N] Launch  [3/M] Special  [ENTER] Super", w / 2, barY + 18);
+            ctx.fillText("P1: [J] Light  [K] Launch  [L] Special  [SPACE] Super*  |  P2: [1/B] Light  [2/N] Launch  [3/M] Special  [ENTER] Super*  (*full meter + quiz)", w / 2, barY + 18);
         } else {
-            ctx.fillText("CONTROLS:  [J] Light Attack / Combo   [K] Heavy / Launcher   [L] Special Move   [SPACE] Super Move (Rage Art)", w / 2, barY + 18);
+            ctx.fillText("CONTROLS:  [J] Light Attack / Combo   [K] Heavy / Launcher   [L] Special Move   [SPACE] Super* (*full meter + quiz)", w / 2, barY + 18);
         }
         ctx.restore();
     }

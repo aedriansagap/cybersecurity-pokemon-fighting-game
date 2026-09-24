@@ -56,6 +56,8 @@ class UIManager {
         this.onlineOpponentDept = "Red Team / Pentesting";
         this.onlineOpponentTitle = "Buffer Overflow Specialist";
         this.activeTrivia = null;
+        this.triviaPurpose = "buff"; // "buff" (tactical buff) or "rage" (supermove auth)
+        this.pendingRageFighter = null;
         this.triviaTimer = null;
         this.triviaTimeLeft = 10;
 
@@ -637,7 +639,7 @@ class UIManager {
             <li><span class="cmd">[J] Light Combo</span> ${char.moves["1"].name} <span class="dmg">${char.moves["1"].damage} DMG [Rapid Taps Auto-Chain!]</span></li>
             <li><span class="cmd">[K] Heavy Launcher</span> ${char.moves.df2.name} <span class="dmg">${char.moves.df2.damage} DMG [AIR JUGGLE ⚡]</span></li>
             <li><span class="cmd">[L] Special Move</span> ${char.moves.special.name} <span class="dmg">${char.moves.special.damage} DMG [PROJECTILE/RUSH]</span></li>
-            <li><span class="cmd">[SPACE] Super Move</span> ${char.rageArtName} <span class="dmg">240 DMG [ZERO-DAY EXPLOIT]</span></li>
+            <li><span class="cmd">[SPACE] Super Move</span> ${char.rageArtName} <span class="dmg">240 DMG [FULL METER + QUIZ AUTH]</span></li>
             <li><span class="cmd">WASD</span> Movement &amp; Guard <span class="dmg">Hold Back: Guard | Double Tap: Dash/3D Sidestep</span></li>
         `;
     }
@@ -795,7 +797,13 @@ class UIManager {
                         window.gameEngine.p2.inputUp = ins.up;
                         window.gameEngine.p2.inputDown = ins.down;
                         if (ins.attack) window.gameEngine.p2.executeAttack(ins.attack);
-                        if (ins.rageArt) window.gameEngine.p2.executeRageArt();
+                        // Trust-but-verify: a remote super implies the opponent
+                        // charged + authenticated on their own screen.
+                        if (ins.rageArt) {
+                            window.gameEngine.p2.threatMeter = 100;
+                            window.gameEngine.p2.rageUnlocked = true;
+                            window.gameEngine.p2.executeRageArt();
+                        }
                     }
                 }
             },
@@ -805,14 +813,21 @@ class UIManager {
         );
     }
 
-    async triggerCyberTrivia() {
+    async triggerCyberTrivia(purpose) {
         try {
+            const modal = document.getElementById("trivia-modal");
+            if (modal && !modal.classList.contains("hidden")) return false;
             const res = await fetch("/api/trivia/random");
             const data = await res.json();
             this.activeTrivia = data;
+            this.triviaPurpose = purpose === "rage" ? "rage" : "buff";
             this.showTriviaModal(data);
+            return true;
         } catch (e) {
             console.error("Failed to load trivia", e);
+            this.triviaPurpose = "buff";
+            this.pendingRageFighter = null;
+            return false;
         }
     }
 
@@ -820,7 +835,12 @@ class UIManager {
         const modal = document.getElementById("trivia-modal");
         modal.classList.remove("hidden");
 
-        document.getElementById("trivia-category").textContent = `[${trivia.category.toUpperCase()}] SOC INCIDENT ALERT`;
+        const catEl = document.getElementById("trivia-category");
+        if (this.triviaPurpose === "rage") {
+            catEl.textContent = `[${trivia.category.toUpperCase()}] ZERO-DAY AUTH — ANSWER TO UNLOCK THE SUPER MOVE`;
+        } else {
+            catEl.textContent = `[${trivia.category.toUpperCase()}] SOC INCIDENT ALERT`;
+        }
         document.getElementById("trivia-question").textContent = trivia.question;
 
         const optionsContainer = document.getElementById("trivia-options");
@@ -845,7 +865,13 @@ class UIManager {
             timerEl.textContent = this.triviaTimeLeft;
             if (this.triviaTimeLeft <= 0) {
                 clearInterval(this.triviaTimer);
-                this.closeTriviaModal("Time expired! No buff applied.");
+                if (this.triviaPurpose === "rage") {
+                    const f = this.pendingRageFighter;
+                    if (f) { f.threatMeter = 50; f.rageUnlocked = false; }
+                    this.closeTriviaModal("Time expired! Zero-Day charge drained to 50%.");
+                } else {
+                    this.closeTriviaModal("Time expired! No buff applied.");
+                }
             }
         }, 1000);
     }
@@ -863,6 +889,25 @@ class UIManager {
                 })
             });
             const result = await res.json();
+
+            if (this.triviaPurpose === "rage") {
+                const f = this.pendingRageFighter || (window.gameEngine && window.gameEngine.p1);
+                if (result.correct && f) {
+                    f.rageUnlocked = true;
+                    window.soundEngine.playUiBeep(880);
+                    window.soundEngine.announce("ZERO-DAY AUTHENTICATED! SUPER MOVE UNLOCKED!");
+                    if (window.gameEngine) window.gameEngine.showBanner("ZERO-DAY AUTHENTICATED — SUPER READY!", "#ff1744", 140);
+                    this.closeTriviaModal(`Correct! ${result.explanation}`);
+                } else if (f) {
+                    f.threatMeter = 50;
+                    f.rageUnlocked = false;
+                    window.soundEngine.playUiBeep(220);
+                    this.closeTriviaModal(`Incorrect! Zero-Day charge drained to 50%. ${result.explanation}`);
+                } else {
+                    this.closeTriviaModal("No live fighter to authenticate.");
+                }
+                return;
+            }
 
             if (result.correct) {
                 window.soundEngine.playUiBeep(880);
@@ -895,6 +940,8 @@ class UIManager {
         const expEl = document.getElementById("trivia-explanation");
         expEl.textContent = message;
         expEl.classList.remove("hidden");
+        this.triviaPurpose = "buff";
+        this.pendingRageFighter = null;
 
         setTimeout(() => {
             modal.classList.add("hidden");

@@ -93,8 +93,21 @@ class BotAI {
             }
         }
 
-        // Zero-Day Rage Art Trigger (HP < 35%)
-        if (this.fighter.inRage && this.fighter.canAct()) {
+        // Zero-Day Rage Art: bot must also charge the meter and pass its own
+        // "SOC challenge" (simulated per difficulty) before it can fire.
+        if (this.fighter.inRage && this.fighter.threatMeter >= 100 && this.fighter.canAct()) {
+            if (!this.fighter.rageUnlocked) {
+                const authChance = {
+                    "script_kiddie": 0.004,
+                    "white_hat": 0.01,
+                    "apt_hacker": 0.02,
+                    "zero_day_overlord": 0.04
+                }[this.difficulty];
+                if (Math.random() < authChance) {
+                    this.fighter.rageUnlocked = true;
+                    if (window.gameEngine) window.gameEngine.showBanner("BOT AUTHENTICATED ITS ZERO-DAY!", "#ff1744", 100);
+                }
+            }
             const rageThreshold = {
                 "script_kiddie": 0.1,
                 "white_hat": 0.3,

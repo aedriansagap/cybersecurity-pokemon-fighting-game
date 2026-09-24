@@ -217,6 +217,12 @@ class FighterProfile(BaseModel):
     character: Optional[str] = None
 
 
+class ProfileVerifyRequest(BaseModel):
+    emp_id: str
+    name: str = "Anonymous"
+    dept: str = "General"
+
+
 class MatchRecordRequest(BaseModel):
     match_id: str
     winner: FighterProfile
@@ -286,6 +292,27 @@ async def verify_trivia_answer(req: TriviaAnswerRequest):
                 "buff": item["buff"] if is_correct else None
             }
     raise HTTPException(status_code=404, detail="Question not found")
+
+@app.post("/api/profile/verify")
+async def verify_profile(req: ProfileVerifyRequest):
+    """Employee-ID-first login (same directory as the Championship Arena).
+
+    Returns the company-verified name/dept when the SQL directory is
+    reachable, otherwise a local profile so the game stays playable offline.
+    """
+    if sql_gateway is not None and sql_gateway.enabled:
+        try:
+            return sql_gateway.validate_and_register(req.emp_id, req.name, req.dept)
+        except ValueError as err:
+            raise HTTPException(status_code=404, detail=str(err))
+    return {
+        "empId": req.emp_id,
+        "name": req.name,
+        "dept": req.dept,
+        "validated": False,
+        "source": "local",
+    }
+
 
 @app.post("/api/matches/record")
 async def record_match(req: MatchRecordRequest):

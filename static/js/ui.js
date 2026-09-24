@@ -50,6 +50,9 @@ class UIManager {
         this.trainerHandle = localStorage.getItem("cybermon_handle") || "Champion Red";
         this.trainerDept = localStorage.getItem("cybermon_dept") || "SOC Incident Response";
         this.trainerTitle = localStorage.getItem("cybermon_title") || "Zero-Day Hunter";
+        this.trainerEmpId = localStorage.getItem("cybermon_emp_id") || "";
+        this.trainerValidated = localStorage.getItem("cybermon_validated") === "true";
+        this.trainerSource = localStorage.getItem("cybermon_source") || "local";
         this.spectatorMode = localStorage.getItem("cybermon_spectator") === "true";
         this.onlineOpponentTrainer = "cynthia";
         this.onlineOpponentHandle = "Cynthia";
@@ -114,6 +117,8 @@ class UIManager {
         const deptSelect = document.getElementById("select-trainer-dept");
         const titleSelect = document.getElementById("select-trainer-title");
         const handleInput = document.getElementById("input-trainer-handle");
+        const empInput = document.getElementById("input-employee-id");
+        const statusEl = document.getElementById("profile-verify-status");
 
         if (deptSelect && deptSelect.options.length === 0) {
             CYBER_DEPARTMENTS.forEach(d => {
@@ -148,20 +153,7 @@ class UIManager {
 
         const btnSave = document.getElementById("btn-save-profile");
         if (btnSave) {
-            btnSave.addEventListener("click", () => {
-                const val = (handleInput.value || "").trim();
-                this.trainerHandle = val || "Trainer";
-                this.trainerDept = deptSelect.value;
-                this.trainerTitle = titleSelect.value;
-
-                localStorage.setItem("cybermon_handle", this.trainerHandle);
-                localStorage.setItem("cybermon_dept", this.trainerDept);
-                localStorage.setItem("cybermon_title", this.trainerTitle);
-
-                this.updateTrainerCard();
-                document.getElementById("profile-modal").classList.add("hidden");
-                if (window.soundEngine) window.soundEngine.playUiBeep(660);
-            });
+            btnSave.addEventListener("click", () => this.saveProfile());
         }
 
         const btnOpen = document.getElementById("btn-edit-profile");
@@ -170,6 +162,8 @@ class UIManager {
                 handleInput.value = this.trainerHandle;
                 deptSelect.value = this.trainerDept;
                 titleSelect.value = this.trainerTitle;
+                if (empInput) empInput.value = this.trainerEmpId || "";
+                if (statusEl) { statusEl.textContent = ""; statusEl.className = "verify-status"; }
                 this.updateProfileModalPreview();
                 document.getElementById("profile-modal").classList.remove("hidden");
                 if (window.soundEngine) window.soundEngine.playUiBeep(440);
@@ -182,6 +176,86 @@ class UIManager {
                 document.getElementById("profile-modal").classList.add("hidden");
             });
         }
+    }
+
+    async saveProfile() {
+        const handleInput = document.getElementById("input-trainer-handle");
+        const deptSelect = document.getElementById("select-trainer-dept");
+        const titleSelect = document.getElementById("select-trainer-title");
+        const empInput = document.getElementById("input-employee-id");
+        const statusEl = document.getElementById("profile-verify-status");
+
+        const handle = ((handleInput && handleInput.value) || "").trim() || "Trainer";
+        const dept = (deptSelect && deptSelect.value) || "General";
+        const title = (titleSelect && titleSelect.value) || this.trainerTitle;
+        const empId = ((empInput && empInput.value) || "").trim();
+
+        const setStatus = (msg, ok) => {
+            if (!statusEl) return;
+            statusEl.textContent = msg;
+            statusEl.className = "verify-status " + (ok ? "ok" : "local");
+        };
+
+        if (!empId) {
+            // No ID: keep it fully local, same as before.
+            this.applyLocalProfile("", handle, dept, title);
+            setStatus("Saved locally without an Employee ID.", false);
+        } else {
+            setStatus("Verifying against the company directory…", false);
+            try {
+                const res = await fetch("/api/profile/verify", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ emp_id: empId, name: handle, dept: dept })
+                });
+                if (res.ok) {
+                    const profile = await res.json();
+                    this.trainerEmpId = profile.empId || empId;
+                    this.trainerValidated = !!profile.validated;
+                    this.trainerSource = profile.source || "local";
+                    if (profile.validated) {
+                        this.trainerHandle = profile.name;
+                        this.trainerDept = profile.dept;
+                        setStatus(`Verified: ${profile.name} (${profile.dept}).`, true);
+                    } else {
+                        this.applyLocalProfile(empId, handle, dept, title);
+                        setStatus("Directory unreachable — saved locally, will verify on the corporate network.", false);
+                    }
+                } else {
+                    this.applyLocalProfile(empId, handle, dept, title);
+                    setStatus("ID not found in the directory — saved locally.", false);
+                }
+            } catch (e) {
+                this.applyLocalProfile(empId, handle, dept, title);
+                setStatus("Directory unreachable — saved locally.", false);
+            }
+            this.trainerTitle = title;
+            localStorage.setItem("cybermon_emp_id", this.trainerEmpId || "");
+            localStorage.setItem("cybermon_handle", this.trainerHandle);
+            localStorage.setItem("cybermon_dept", this.trainerDept);
+            localStorage.setItem("cybermon_validated", this.trainerValidated ? "true" : "false");
+            localStorage.setItem("cybermon_source", this.trainerSource || "local");
+            localStorage.setItem("cybermon_title", this.trainerTitle);
+        }
+
+        this.updateTrainerCard();
+        if (window.soundEngine) window.soundEngine.playUiBeep(660);
+        setTimeout(() => document.getElementById("profile-modal").classList.add("hidden"), 900);
+    }
+
+    applyLocalProfile(empId, handle, dept, title) {
+        this.trainerEmpId = empId;
+        this.trainerHandle = handle;
+        this.trainerDept = dept;
+        this.trainerTitle = title;
+        this.trainerValidated = false;
+        this.trainerSource = "local";
+        localStorage.setItem("cybermon_emp_id", empId);
+        localStorage.setItem("cybermon_handle", handle);
+        localStorage.setItem("cybermon_dept", dept);
+        localStorage.setItem("cybermon_title", title);
+        localStorage.setItem("cybermon_validated", "false");
+        localStorage.setItem("cybermon_source", "local");
     }
 
     updateProfileModalPreview() {
@@ -213,6 +287,16 @@ class UIManager {
         if (menuName) menuName.textContent = this.trainerHandle ? this.trainerHandle.toUpperCase() : trainer.name.toUpperCase();
         if (menuDept) menuDept.textContent = this.trainerDept.toUpperCase();
         if (menuTitle) menuTitle.textContent = this.trainerTitle.toUpperCase();
+        const idTag = document.querySelector(".trainer-id-tag");
+        if (idTag) {
+            if (this.trainerEmpId && this.trainerValidated) {
+                idTag.textContent = `ID: #${this.trainerEmpId} ✓ VERIFIED`;
+            } else if (this.trainerEmpId) {
+                idTag.textContent = `ID: #${this.trainerEmpId} • LOCAL`;
+            } else {
+                idTag.textContent = "ID: #2026-SOC";
+            }
+        }
         if (activeName) activeName.textContent = this.trainerHandle ? this.trainerHandle.toUpperCase() : trainer.name.toUpperCase();
         if (recEl) {
             const winRate = this.careerStats.matches > 0 ? Math.round((this.careerStats.wins / this.careerStats.matches) * 100) : 0;
@@ -261,6 +345,7 @@ class UIManager {
         // Never blocks or breaks local career stats when the server is unreachable.
         try {
             const p1 = {
+                empId: this.trainerEmpId || null,
                 name: this.trainerHandle || "Player 1",
                 dept: this.trainerDept || "General",
                 character: this.selectedP1Char

@@ -447,6 +447,11 @@
                     <button class="modal-close" id="btn-close-profile">&times;</button>
                 </div>
                 <div class="profile-form">
+                    <div class="form-group">
+                        <label for="input-employee-id">🪪 EMPLOYEE ID (VERIFY FIRST):</label>
+                        <input type="text" id="input-employee-id" maxlength="20" inputmode="numeric" placeholder="e.g. 10234 — verified against company directory" class="cyber-input">
+                        <div id="profile-verify-status" class="verify-status"></div>
+                    </div>
                     <div class="profile-preview-card">
                         <img id="profile-preview-avatar" src="/static/assets/sprites/trainers/red.png" alt="Avatar" class="profile-preview-avatar">
                         <div>
@@ -470,7 +475,7 @@
                     <button id="btn-save-profile" class="cyber-btn poke-capsule-btn" style="margin-top: 15px; width: 100%;">
                         <div class="btn-left-content">
                             <img src="/static/assets/sprites/items/poke-ball.png" class="btn-ball-img" alt="Save">
-                            <span>SAVE TRAINER PROFILE</span>
+                            <span>VERIFY &amp; SAVE PROFILE</span>
                         </div>
                         <span class="btn-arrow">✔</span>
                     </button>

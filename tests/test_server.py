@@ -129,6 +129,21 @@ class TestCyberMonServer(unittest.TestCase):
             err = ws.receive_json()
             self.assertEqual(err["type"], "error")
 
+    def test_profile_verify_local_fallback(self):
+        # No DB configured in this environment -> local profile echo.
+        res = self.client.post("/api/profile/verify", json={
+            "emp_id": "10234",
+            "name": "Alice",
+            "dept": "HR",
+        })
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assertEqual(data["empId"], "10234")
+        self.assertEqual(data["name"], "Alice")
+        self.assertEqual(data["dept"], "HR")
+        self.assertFalse(data["validated"])
+        self.assertEqual(data["source"], "local")
+
     def test_scoreboard_page(self):
         res = self.client.get("/scoreboard")
         self.assertEqual(res.status_code, 200)

@@ -24,21 +24,6 @@ const CYBER_DEPARTMENTS = [
     "Security Architecture"
 ];
 
-const CYBER_TITLES = [
-    "Zero-Day Hunter",
-    "Buffer Overflow Specialist",
-    "Firewall Architect",
-    "Phishing Bait",
-    "SOC Night Owl",
-    "Kubernetes Wrangler",
-    "Malware Reverse Engineer",
-    "SIEM Query Overlord",
-    "Patch Tuesday Survivor",
-    "Root Access Baron",
-    "Cyber Elite Four",
-    "Penetration Test Lead"
-];
-
 class UIManager {
     constructor() {
         this.currentScreen = "menu";
@@ -49,7 +34,6 @@ class UIManager {
         this.selectedTrainer = localStorage.getItem("cybermon_trainer") || "red";
         this.trainerHandle = localStorage.getItem("cybermon_handle") || "Champion Red";
         this.trainerDept = localStorage.getItem("cybermon_dept") || "SOC Incident Response";
-        this.trainerTitle = localStorage.getItem("cybermon_title") || "Zero-Day Hunter";
         this.trainerEmpId = localStorage.getItem("cybermon_emp_id") || "";
         this.trainerValidated = localStorage.getItem("cybermon_validated") === "true";
         this.trainerSource = localStorage.getItem("cybermon_source") || "local";
@@ -115,7 +99,6 @@ class UIManager {
 
     initProfileModal() {
         const deptSelect = document.getElementById("select-trainer-dept");
-        const titleSelect = document.getElementById("select-trainer-title");
         const handleInput = document.getElementById("input-trainer-handle");
         const empInput = document.getElementById("input-employee-id");
         const statusEl = document.getElementById("profile-verify-status");
@@ -130,25 +113,12 @@ class UIManager {
             });
         }
 
-        if (titleSelect && titleSelect.options.length === 0) {
-            CYBER_TITLES.forEach(t => {
-                const opt = document.createElement("option");
-                opt.value = t;
-                opt.textContent = t;
-                if (t === this.trainerTitle) opt.selected = true;
-                titleSelect.appendChild(opt);
-            });
-        }
-
         if (handleInput) {
             handleInput.value = this.trainerHandle;
             handleInput.addEventListener("input", () => this.updateProfileModalPreview());
         }
         if (deptSelect) {
             deptSelect.addEventListener("change", () => this.updateProfileModalPreview());
-        }
-        if (titleSelect) {
-            titleSelect.addEventListener("change", () => this.updateProfileModalPreview());
         }
 
         const btnSave = document.getElementById("btn-save-profile");
@@ -161,7 +131,6 @@ class UIManager {
             btnOpen.addEventListener("click", () => {
                 handleInput.value = this.trainerHandle;
                 deptSelect.value = this.trainerDept;
-                titleSelect.value = this.trainerTitle;
                 if (empInput) empInput.value = this.trainerEmpId || "";
                 if (statusEl) { statusEl.textContent = ""; statusEl.className = "verify-status"; }
                 this.updateProfileModalPreview();
@@ -181,13 +150,11 @@ class UIManager {
     async saveProfile() {
         const handleInput = document.getElementById("input-trainer-handle");
         const deptSelect = document.getElementById("select-trainer-dept");
-        const titleSelect = document.getElementById("select-trainer-title");
         const empInput = document.getElementById("input-employee-id");
         const statusEl = document.getElementById("profile-verify-status");
 
         const handle = ((handleInput && handleInput.value) || "").trim() || "Trainer";
         const dept = (deptSelect && deptSelect.value) || "General";
-        const title = (titleSelect && titleSelect.value) || this.trainerTitle;
         const empId = ((empInput && empInput.value) || "").trim();
 
         const setStatus = (msg, ok) => {
@@ -198,7 +165,7 @@ class UIManager {
 
         if (!empId) {
             // No ID: keep it fully local, same as before.
-            this.applyLocalProfile("", handle, dept, title);
+            this.applyLocalProfile("", handle, dept);
             setStatus("Saved locally without an Employee ID.", false);
         } else {
             setStatus("Verifying against the company directory…", false);
@@ -218,24 +185,22 @@ class UIManager {
                         this.trainerDept = profile.dept;
                         setStatus(`Verified: ${profile.name} (${profile.dept}).`, true);
                     } else {
-                        this.applyLocalProfile(empId, handle, dept, title);
+                        this.applyLocalProfile(empId, handle, dept);
                         setStatus("Directory unreachable — saved locally, will verify on the corporate network.", false);
                     }
                 } else {
-                    this.applyLocalProfile(empId, handle, dept, title);
+                    this.applyLocalProfile(empId, handle, dept);
                     setStatus("ID not found in the directory — saved locally.", false);
                 }
             } catch (e) {
-                this.applyLocalProfile(empId, handle, dept, title);
+                this.applyLocalProfile(empId, handle, dept);
                 setStatus("Directory unreachable — saved locally.", false);
             }
-            this.trainerTitle = title;
             localStorage.setItem("cybermon_emp_id", this.trainerEmpId || "");
             localStorage.setItem("cybermon_handle", this.trainerHandle);
             localStorage.setItem("cybermon_dept", this.trainerDept);
             localStorage.setItem("cybermon_validated", this.trainerValidated ? "true" : "false");
             localStorage.setItem("cybermon_source", this.trainerSource || "local");
-            localStorage.setItem("cybermon_title", this.trainerTitle);
         }
 
         this.updateTrainerCard();
@@ -243,17 +208,15 @@ class UIManager {
         setTimeout(() => document.getElementById("profile-modal").classList.add("hidden"), 900);
     }
 
-    applyLocalProfile(empId, handle, dept, title) {
+    applyLocalProfile(empId, handle, dept) {
         this.trainerEmpId = empId;
         this.trainerHandle = handle;
         this.trainerDept = dept;
-        this.trainerTitle = title;
         this.trainerValidated = false;
         this.trainerSource = "local";
         localStorage.setItem("cybermon_emp_id", empId);
         localStorage.setItem("cybermon_handle", handle);
         localStorage.setItem("cybermon_dept", dept);
-        localStorage.setItem("cybermon_title", title);
         localStorage.setItem("cybermon_validated", "false");
         localStorage.setItem("cybermon_source", "local");
     }
@@ -263,15 +226,17 @@ class UIManager {
         const prevAvatar = document.getElementById("profile-preview-avatar");
         const prevHandle = document.getElementById("profile-preview-handle");
         const prevDept = document.getElementById("profile-preview-dept");
-        const prevTitle = document.getElementById("profile-preview-title");
+        const prevStatus = document.getElementById("profile-preview-status");
         const handleInput = document.getElementById("input-trainer-handle");
         const deptSelect = document.getElementById("select-trainer-dept");
-        const titleSelect = document.getElementById("select-trainer-title");
 
         if (prevAvatar) prevAvatar.src = trainer.sprite;
         if (prevHandle) prevHandle.textContent = (handleInput && handleInput.value.trim()) ? handleInput.value.trim().toUpperCase() : trainer.name.toUpperCase();
         if (prevDept && deptSelect) prevDept.textContent = deptSelect.value.toUpperCase();
-        if (prevTitle && titleSelect) prevTitle.textContent = titleSelect.value.toUpperCase();
+        if (prevStatus) {
+            prevStatus.textContent = (this.trainerEmpId && this.trainerValidated) ? "✓ VERIFIED TRAINER" : "LOCAL PROFILE";
+            prevStatus.style.color = (this.trainerEmpId && this.trainerValidated) ? "var(--neon-green)" : "var(--neon-yellow)";
+        }
     }
 
     updateTrainerCard() {
@@ -286,7 +251,7 @@ class UIManager {
         if (menuAvatar) menuAvatar.src = trainer.sprite;
         if (menuName) menuName.textContent = this.trainerHandle ? this.trainerHandle.toUpperCase() : trainer.name.toUpperCase();
         if (menuDept) menuDept.textContent = this.trainerDept.toUpperCase();
-        if (menuTitle) menuTitle.textContent = this.trainerTitle.toUpperCase();
+        if (menuTitle) menuTitle.textContent = (this.trainerEmpId && this.trainerValidated) ? "✓ VERIFIED" : "LOCAL PROFILE";
         const idTag = document.querySelector(".trainer-id-tag");
         if (idTag) {
             if (this.trainerEmpId && this.trainerValidated) {
@@ -760,7 +725,7 @@ class UIManager {
             const p1Dept = document.getElementById("vs-p1-dept");
             const p1Title = document.getElementById("vs-p1-title");
             if (p1Dept) p1Dept.textContent = (this.trainerDept || "SOC INCIDENT RESPONSE").toUpperCase();
-            if (p1Title) p1Title.textContent = (this.trainerTitle || "ZERO-DAY HUNTER").toUpperCase();
+            if (p1Title) p1Title.textContent = (this.trainerEmpId && this.trainerValidated) ? "✓ VERIFIED TRAINER" : "LOCAL TRAINER";
             document.getElementById("vs-p1-pokemon-img").src = char1.spriteFront;
             document.getElementById("vs-p1-pokemon-name").textContent = char1.name;
             document.getElementById("vs-p1-pokemon-title").textContent = char1.title.toUpperCase();
@@ -847,7 +812,7 @@ class UIManager {
                     char: this.selectedP1Char,
                     handle: this.trainerHandle,
                     dept: this.trainerDept,
-                    title: this.trainerTitle
+                    title: (this.trainerEmpId && this.trainerValidated) ? "Verified" : "Local"
                 });
 
                 if (welcomeData.p1_connected && welcomeData.p2_connected) {
